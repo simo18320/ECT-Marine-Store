@@ -4,12 +4,22 @@ Status: **Applied** (project `pwchzixxritrieedwuqz`, `eu-west-1`). This document
 schema implemented in `database/migrations/`. The migrations are the source of truth for exact
 columns/constraints; this doc explains *why* the shape is what it is.
 
-One migration exists beyond what's narrated below: `0010_security_hardening.sql`, a post-deploy
-fix for issues the Supabase security advisor caught after `0001`–`0009` were applied (missing RLS
-on `equipment_types`, unpinned function `search_path`, RLS helper functions directly RPC-callable).
-See its header comment and `docs/security.md` for detail — the table/column design itself didn't
-change, only where the four RLS helper functions live (`private` schema instead of `public`) and
-one extra table's RLS.
+Four migrations exist beyond what's narrated below:
+- `0010_security_hardening.sql` — post-deploy fix for issues the Supabase security advisor caught
+  after `0001`–`0009` (missing RLS on `equipment_types`, unpinned function `search_path`, RLS
+  helper functions directly RPC-callable). Table/column design didn't change, only where the four
+  RLS helper functions live (`private` schema instead of `public`) and one extra table's RLS.
+- `0011_product_search_column.sql` — adds `products.search_vector` (a stored generated
+  `tsvector` column) so Phase 2's search (business-rules.md, implementation-plan.md Day 6) can use
+  Supabase JS's `.textSearch()`, which needs a real column to target.
+- `0012_public_product_availability.sql` (superseded by `0013`, kept for history) and
+  `0013_availability_computed_field.sql` — `inventory` is staff-only under RLS (raw stock counts
+  are operationally sensitive), but the storefront needs to show availability. `0012`'s first
+  attempt (a view) was flagged ERROR by the security advisor (`security_definer_view`); `0013`
+  replaces it with the correct pattern: `availability_status(products)`, a PostgREST "computed
+  field" — a `security definer` function taking the product row as its sole argument, exposing
+  only a coarse `in_stock`/`low_stock`/`out_of_stock` status, never the raw numbers. See
+  `docs/security.md`.
 
 ## 1. Design principles
 

@@ -1,9 +1,10 @@
 # ECT Marine Store — Security
 
-Status: **Partially implemented** — RLS, roles, and Auth are live (Phase 1); rate-limit config and
-GDPR data-retention mechanics are still Phase 2+ design only. This file must stay in sync with the
-actual code (§54 of the master spec); treat drift between this doc and
-`database/migrations/0009_rls_policies.sql` / `0010_security_hardening.sql` as a bug.
+Status: **Partially implemented** — RLS, roles, and Auth are live (Phase 1); catalogue browsing is
+live (Phase 2); rate-limit config and GDPR data-retention mechanics are still design only. This
+file must stay in sync with the actual code (§54 of the master spec); treat drift between this doc
+and `database/migrations/0009_rls_policies.sql` / `0010_security_hardening.sql` /
+`0013_availability_computed_field.sql` as a bug.
 
 ## 1. Roles
 
@@ -56,7 +57,29 @@ mutations (product edits, price changes, order status overrides, supplier status
 explicitly by the relevant service function, not inferred from DB triggers, so the "why" context
 that a trigger can't know is captured too.
 
-## 7. GDPR readiness
+## 7. Public availability without exposing raw inventory
+
+`inventory` is staff-only under RLS (business-rules.md §2 raw stock counts are operationally
+sensitive), but the storefront needs to show "In stock" / "Low stock" / "Out of stock". This is
+computed by `availability_status(products)` (migration `0013`), a `security definer` function
+taking the product row as its argument — PostgREST's "computed field" pattern, selectable as if it
+were a real column (`select=sku,availability_status`). It only ever returns the coarse status,
+never `current_stock`/`reserved_stock`/`reorder_point`. An earlier attempt (`0012`, a plain view)
+was correctly flagged ERROR by the Supabase advisor (`security_definer_view`) and was replaced
+rather than left in place.
+
+## 8. Accepted advisor findings
+
+Two WARN-level findings are deliberately left as-is, not overlooked:
+- **`citext` installed in the `public` schema.** Moving it would mean recreating
+  `profiles.email`'s type dependency; low actual risk, not worth the churn this early (see
+  migration `0010`'s header comment).
+- **`availability_status` is directly RPC-callable by `anon`/`authenticated`.** It has to be —
+  that's what makes it selectable as a computed field on the public `products` listing. The only
+  information it discloses is the coarse stock status of a product that's already publicly
+  readable, so the direct-RPC path adds no meaningful new exposure.
+
+## 9. GDPR readiness
 
 Deferred detail to Phase 1+ implementation, but the schema already supports it without rework:
 - Account deletion: `profiles` cascades are scoped so deleting a profile doesn't silently delete

@@ -1350,6 +1350,7 @@ export type Database = {
           purchase_cost: number | null
           replacement_interval_days: number | null
           requires_compliance_ack: boolean
+          search_vector: unknown
           selling_price: number
           short_description: string | null
           sku: string
@@ -1376,6 +1377,7 @@ export type Database = {
           purchase_cost?: number | null
           replacement_interval_days?: number | null
           requires_compliance_ack?: boolean
+          search_vector?: unknown
           selling_price: number
           short_description?: string | null
           sku: string
@@ -1402,6 +1404,7 @@ export type Database = {
           purchase_cost?: number | null
           replacement_interval_days?: number | null
           requires_compliance_ack?: boolean
+          search_vector?: unknown
           selling_price?: number
           short_description?: string | null
           sku?: string
@@ -2199,7 +2202,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      availability_status: {
+        Args: { p: Database["public"]["Tables"]["products"]["Row"] }
+        Returns: string
+      }
     }
     Enums: {
       account_type:
