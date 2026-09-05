@@ -6,10 +6,10 @@ Equipment Register, a deterministic Maintenance Engine, and an AI Procurement/Re
 
 ## Status
 
-**Phase 5 (Days 16–19) done.** Phases 0–4 (architecture, Next.js scaffold, Supabase/Auth,
-catalogue/search/cart, Stripe checkout, admin dashboard) are complete. My Yacht — yacht profiles,
-equipment/filter registers, QR codes, live replacement-status computation — is live at
-`/my-yacht`. Phase 6 (deterministic recommendation engine) is next.
+**Phase 6 (Days 20–22) done.** Phases 0–5 (architecture, Next.js scaffold, Supabase/Auth,
+catalogue/search/cart, Stripe checkout, admin dashboard, My Yacht) are complete. The deterministic
+recommendation engine — "Find the right product" at `/find-product` — is live. Phase 7
+(procurement) is next.
 
 - [`docs/`](docs/) — architecture, database, business rules, AI engine, procurement, logistics,
   security, and the 30-day implementation plan.
@@ -59,6 +59,28 @@ added a Filter Housing installed 40 days ago with a 30-day interval (correctly s
 90-day interval (correctly showed **OK**), then actually navigated to both generated QR URLs
 (reading the real token out of the database, simulating a scan) and confirmed each resolved to the
 right record with the right computed status and due date.
+
+## Recommendation engine
+
+`/find-product` — business-rules.md §5's deterministic engine, exactly as designed: a fixed
+problem taxonomy (`lib/recommendations/problems.ts`, e.g. "Sediment or cloudy water") maps to one
+or more `equipment_types`; `lib/recommendations/engine.ts` finds `product_compatibility` rows for
+those types (filtered to only `ect_verified`/`manufacturer_doc` sources, or a `manual_entry` row
+that's actually been signed off — §4's compatibility rule, enforced again here even though the DB
+constraint already guarantees it); if the customer has a yacht selected, equipment actually
+registered there upgrades a match from "category fit" to "exact match" by comparing manufacturer/
+model. `lib/recommendations/rules.ts` (5 unit tests) does the final ranking: exact > category >
+in-stock > price. No AI involved in this phase — Phase 8's assistant may explain this output later
+but can never add a product absent from it.
+
+Verified against 5 scenarios (the implementation plan's exit criteria), all confirmed live rather
+than just read from the code: a "Sediment" query correctly surfaced both compatible filters,
+price-ordered; "Microbiological risk" correctly surfaced only the UV system; "HVAC air quality" (a
+type with no compatibility data yet) correctly showed an honest empty state instead of guessing;
+selecting a throwaway test yacht with a matching Filter Housing installed correctly upgraded both
+sediment-problem results to "Exact match"; the same yacht queried for "Microbiological risk" (no
+UV equipment registered there) correctly fell back to "category fit" rather than falsely claiming
+an exact match.
 
 ## Admin dashboard
 
@@ -155,6 +177,5 @@ deleted.
 
 ## Next step
 
-Phase 6 (Days 20–22): deterministic recommendation engine — problem selector, compatibility-based
-ranking wired to real `product_compatibility` data, recommended kits on product/category pages.
-See `docs/implementation-plan.md`.
+Phase 7 (Days 23–25): procurement — supplier database, landed cost calculation, procurement
+dashboard, manual RFQ generation. See `docs/implementation-plan.md`.

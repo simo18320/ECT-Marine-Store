@@ -9,6 +9,7 @@ const NAV_LINKS = [
   { href: "/categories/air", label: "Air" },
   { href: "/categories/hygiene", label: "Hygiene" },
   { href: "/categories/maintenance-kits", label: "Maintenance Kits" },
+  { href: "/find-product", label: "Find the right product" },
   { href: "/my-yacht", label: "My Yacht" },
 ];
 

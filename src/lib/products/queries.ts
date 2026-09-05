@@ -44,18 +44,18 @@ export interface ProductDetail extends Product {
 // see database.md §3 / security.md). `availability_status` is a PostgREST "computed field"
 // (a SECURITY DEFINER function taking the products row as its sole argument, migration 0013)
 // exposing only a coarse status, never the raw numbers.
-const PRODUCT_LIST_SELECT = `
+export const PRODUCT_LIST_SELECT = `
   *,
   availability_status,
   primary_image:product_images ( url, alt_text )
 `;
 
-interface RawProductListRow extends Product {
+export interface RawProductListRow extends Product {
   availability_status: string | null;
   primary_image: Pick<ProductImage, "url" | "alt_text"> | null;
 }
 
-function toListItem(row: RawProductListRow): ProductListItem {
+export function toListItem(row: RawProductListRow): ProductListItem {
   const { availability_status, ...rest } = row;
   return { ...rest, availability_status: parseAvailabilityStatus(availability_status) };
 }
