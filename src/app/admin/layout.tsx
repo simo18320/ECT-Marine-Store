@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { requireStaff } from "@/lib/admin/guard";
 import { SignOutButton } from "@/app/account/sign-out-button";
+import { MobileNav } from "@/components/nav/mobile-nav";
 
 const NAV_LINKS = [
   { href: "/admin", label: "Dashboard" },
@@ -19,8 +20,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="flex min-h-full flex-col">
-      <header className="border-b border-border bg-sidebar text-sidebar-foreground">
+      <header className="relative border-b border-border bg-sidebar text-sidebar-foreground">
         <div className="mx-auto flex max-w-6xl items-center gap-6 px-6 py-3">
+          <MobileNav links={NAV_LINKS} variant="dark" />
           <Link href="/admin" className="shrink-0">
             <Image
               src="/images/logo-wordmark-white.png"
@@ -30,14 +32,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               className="h-6 w-auto"
             />
           </Link>
-          <nav className="flex flex-1 gap-5 text-sm font-medium">
+          <nav className="hidden flex-1 gap-5 text-sm font-medium md:flex">
             {NAV_LINKS.map((link) => (
               <Link key={link.href} href={link.href} className="hover:text-sidebar-primary">
                 {link.label}
               </Link>
             ))}
           </nav>
-          <span className="text-xs text-sidebar-foreground/70 capitalize">
+          <span className="ml-auto hidden text-xs text-sidebar-foreground/70 capitalize sm:inline md:ml-0">
             {staff.role.replace(/_/g, " ")}
           </span>
           <SignOutButton />

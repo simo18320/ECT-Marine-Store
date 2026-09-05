@@ -18,9 +18,13 @@ export default async function AdminInventoryPage() {
       <section className="mb-10 rounded-md border border-border p-4">
         <h2 className="mb-3 text-sm font-semibold">Record a movement</h2>
         <form action={recordMovement} className="flex flex-wrap items-end gap-3">
-          <label className="flex flex-col gap-1 text-sm">
+          <label className="flex w-full flex-col gap-1 text-sm sm:w-auto">
             Product
-            <select name="product_id" required className="min-w-48 rounded-md border border-input bg-card px-3 py-2">
+            <select
+              name="product_id"
+              required
+              className="w-full min-w-0 rounded-md border border-input bg-card px-3 py-2 sm:min-w-48 sm:w-auto sm:max-w-64"
+            >
               {products.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.sku} — {p.name}

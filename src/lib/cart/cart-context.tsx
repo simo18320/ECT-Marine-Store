@@ -1,16 +1,15 @@
 "use client";
 
 import { useCallback, useMemo, useSyncExternalStore } from "react";
+import {
+  addItem as addItemPure,
+  computeCartTotals,
+  removeItem as removeItemPure,
+  updateQuantity as updateQuantityPure,
+  type CartItem,
+} from "./rules";
 
-export interface CartItem {
-  productId: string;
-  sku: string;
-  name: string;
-  slug: string;
-  unitPrice: number;
-  vatRate: number;
-  quantity: number;
-}
+export type { CartItem };
 
 const STORAGE_KEY = "ect-marine-store:cart";
 const listeners = new Set<() => void>();
@@ -63,37 +62,20 @@ export function useCart() {
   const items = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   const addItem = useCallback((item: Omit<CartItem, "quantity">, quantity = 1) => {
-    const current = getSnapshot();
-    const existing = current.find((i) => i.productId === item.productId);
-    const next = existing
-      ? current.map((i) =>
-          i.productId === item.productId ? { ...i, quantity: i.quantity + quantity } : i,
-        )
-      : [...current, { ...item, quantity }];
-    setCart(next);
+    setCart(addItemPure(getSnapshot(), item, quantity));
   }, []);
 
   const removeItem = useCallback((productId: string) => {
-    setCart(getSnapshot().filter((i) => i.productId !== productId));
+    setCart(removeItemPure(getSnapshot(), productId));
   }, []);
 
   const updateQuantity = useCallback((productId: string, quantity: number) => {
-    const current = getSnapshot();
-    setCart(
-      quantity <= 0
-        ? current.filter((i) => i.productId !== productId)
-        : current.map((i) => (i.productId === productId ? { ...i, quantity } : i)),
-    );
+    setCart(updateQuantityPure(getSnapshot(), productId, quantity));
   }, []);
 
   const clear = useCallback(() => setCart([]), []);
 
-  const totals = useMemo(() => {
-    const subtotal = items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
-    const vatTotal = items.reduce((sum, i) => sum + i.unitPrice * i.quantity * (i.vatRate / 100), 0);
-    const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
-    return { subtotal, vatTotal, grandTotal: subtotal + vatTotal, itemCount };
-  }, [items]);
+  const totals = useMemo(() => computeCartTotals(items), [items]);
 
   return { items, addItem, removeItem, updateQuantity, clear, ...totals };
 }

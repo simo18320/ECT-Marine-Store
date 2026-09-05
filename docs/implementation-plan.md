@@ -132,6 +132,19 @@ manual pass on: homepage, product page, cart/checkout, My Yacht, admin dashboard
 are unit tested; webhook/RLS are integration tested), and a manual mobile pass has no blocking
 layout issues on the core flows.
 
+**Done.** 74 unit tests (`npm test`) across every domain's rules.ts, including two gaps closed
+this phase (`inventory/rules.ts`, `products/queries.ts`'s `toListItem`) and one refactor (cart
+logic extracted from the `useCart()` hook into pure `lib/cart/rules.ts` so it's testable at all).
+7 integration tests (`npm run test:integration`) against the real Supabase project: webhook
+double-delivery idempotency (which caught and fixed a real bug — bundle sales never decremented
+their components, only business-rules.md §1 said they should) and RLS cross-tenant isolation with
+real signed-in sessions. Manual mobile pass at 375×812 found and fixed two blocking navigation
+issues (see README.md's "Testing" section) via a shared `MobileNav` component, plus a horizontal
+overflow on `/admin/inventory`'s movement form. auth and yacht/equipment creation are exercised as
+part of the RLS and webhook integration tests rather than as separate dedicated tests — creating
+users/yachts/equipment is plain CRUD with no business-logic branches of its own to test beyond
+what those two suites already exercise live.
+
 ## Phase 10 — Launch (Day 30)
 
 Soft launch to selected ECT customers per §44. Not called "production-ready" until Phase 9's exit

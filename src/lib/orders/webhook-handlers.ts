@@ -59,19 +59,50 @@ export async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Se
 
   const { data: items } = await admin
     .from("order_items")
-    .select("product_id, quantity, name_snapshot, line_total")
+    .select("product_id, quantity, name_snapshot, line_total, product:products(is_bundle)")
     .eq("order_id", order.id);
 
   if (items && items.length > 0) {
-    await admin.from("inventory_movements").insert(
-      items.map((item) => ({
-        product_id: item.product_id,
-        movement_type: "sale" as const,
-        quantity: item.quantity,
-        reference_type: "order",
-        reference_id: order.id,
-      })),
-    );
+    // business-rules.md §1: a bundle's own selling_price isn't the sum of its components, and its
+    // stock isn't decremented directly either — each product_bundle_items component is decremented
+    // by bundle_quantity x items_sold instead, as its own inventory_movements row (same order_id),
+    // so a bundle sale stays auditable component-by-component.
+    const bundleProductIds = items.filter((i) => i.product?.is_bundle).map((i) => i.product_id);
+    const { data: bundleComponents } =
+      bundleProductIds.length > 0
+        ? await admin
+            .from("product_bundle_items")
+            .select("bundle_product_id, component_product_id, quantity")
+            .in("bundle_product_id", bundleProductIds)
+        : { data: [] };
+
+    const movements = items.flatMap((item) => {
+      if (!item.product?.is_bundle) {
+        return [
+          {
+            product_id: item.product_id,
+            movement_type: "sale" as const,
+            quantity: item.quantity,
+            reference_type: "order_item",
+            reference_id: order.id,
+          },
+        ];
+      }
+
+      return (bundleComponents ?? [])
+        .filter((c) => c.bundle_product_id === item.product_id)
+        .map((c) => ({
+          product_id: c.component_product_id,
+          movement_type: "sale" as const,
+          quantity: c.quantity * item.quantity,
+          reference_type: "order_item",
+          reference_id: order.id,
+        }));
+    });
+
+    if (movements.length > 0) {
+      await admin.from("inventory_movements").insert(movements);
+    }
   }
 
   const customerEmail = session.customer_details?.email ?? session.customer_email;

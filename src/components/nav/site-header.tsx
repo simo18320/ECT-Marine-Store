@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { SearchBox } from "./search-box";
+import { MobileNav } from "./mobile-nav";
 import { CartIcon } from "@/components/cart/cart-icon";
 
 const NAV_LINKS = [
@@ -16,8 +17,9 @@ const NAV_LINKS = [
 
 export function SiteHeader() {
   return (
-    <header className="border-b border-border">
+    <header className="relative border-b border-border">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-3 px-6 py-4">
+        <MobileNav links={NAV_LINKS} />
         <Link href="/" className="shrink-0">
           <Image
             src="/images/logo-wordmark.png"

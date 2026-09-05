@@ -6,11 +6,14 @@ Equipment Register, a deterministic Maintenance Engine, and an AI Procurement/Re
 
 ## Status
 
-**Phase 8 (Days 26–27) done.** Phases 0–7 (architecture, Next.js scaffold, Supabase/Auth,
+**Phase 9 (Days 28–29) done.** Phases 0–8 (architecture, Next.js scaffold, Supabase/Auth,
 catalogue/search/cart, Stripe checkout, admin dashboard, My Yacht, recommendation engine,
-procurement) are complete. The customer-facing AI assistant — `/assistant` — is live and verified
-against a real Claude model: retrieval layer, Claude integration, and the SKU-allowlist safety
-check. Phase 9 (testing) is next.
+procurement, AI assistant) are complete. Phase 9 added the automated tests the master spec's §45
+checklist calls for — 74 unit tests plus a real, network-backed integration suite (webhook
+idempotency, RLS cross-tenant isolation) — and a manual mobile pass that found and fixed two real
+bugs: no way to reach `/find-product`/`/assistant`/`/my-yacht` from the header on a phone, and the
+admin nav overflowing the page body instead of wrapping. See "Testing" below. Phase 10 (launch) is
+next.
 
 - [`docs/`](docs/) — architecture, database, business rules, AI engine, procurement, logistics,
   security, and the 30-day implementation plan.
@@ -224,6 +227,59 @@ Webhooks once a production/staging endpoint exists.
 
 Read [`docs/architecture.md`](docs/architecture.md) first.
 
+## Testing
+
+`npm test` (`vitest run`) — 74 fast, network-free unit tests covering every domain's pure
+`lib/*/rules.ts` logic (orders, inventory, maintenance, suppliers, recommendations, cart, AI
+postprocess) plus the defensive product-mapping helpers. Two gaps closed in Phase 9:
+
+- **`lib/inventory/rules.ts` and `lib/products/queries.ts`'s `toListItem`** had no tests despite
+  being used everywhere since Phase 2 — added `tests/inventory-rules.test.ts` and
+  `tests/products-rules.test.ts`.
+- **Cart logic lived entirely inside the `useCart()` hook closure**, untestable without a DOM —
+  extracted the pure array transformations into `lib/cart/rules.ts` (`addItem`, `removeItem`,
+  `updateQuantity`, `computeCartTotals`), same "UI → pure rules.ts" split every other domain
+  already follows. `cart-context.tsx` is now a thin wrapper over it. `tests/cart-rules.test.ts`
+  covers it.
+
+`npm run test:integration` — a separate suite (`vitest.integration.config.ts`, excluded from the
+default run since it needs live credentials and network access) that hits the real Supabase
+project directly, matching the master spec §45 items that specifically call for integration rather
+than unit tests:
+
+- **`tests/integration/webhook-idempotency.test.ts`** — calls the actual
+  `handleCheckoutSessionCompleted` handler twice with the same synthetic session (Stripe's own
+  redelivery behavior), asserting exactly one payment and the order transitions to `paid` only
+  once. Building this surfaced a real, previously-undetected bug: business-rules.md §1 requires a
+  bundle sale to decrement each `product_bundle_items` component separately, but no code anywhere
+  in `orders/*.ts` ever did that — the handler only ever decremented the bundle product's own
+  (untracked) inventory row. Fixed in `webhook-handlers.ts`, and this test now regression-tests it
+  directly against real dev-sample products (a bundle with two components, plus a standalone
+  product) rather than trusting it stays fixed.
+- **`tests/integration/rls-cross-tenant.test.ts`** — creates two real customers via
+  `auth.admin.createUser` (not a raw SQL insert — see "Auth error" above) plus one `ect_admin`,
+  and asserts against real signed-in sessions: an owner reads their own yacht, an unrelated
+  customer and an anonymous request both get an empty result (not an error — RLS filters
+  silently), and staff can read any yacht.
+
+One test-hygiene bug surfaced and fixed while building the webhook test: `inventory_movements`
+rows only ever move `current_stock` forward via the `apply_inventory_movement` INSERT trigger —
+there's no reverse trigger on DELETE. The test's first version deleted its movement rows during
+cleanup and assumed that reversed the stock change; it didn't, and running it once permanently
+decremented three real dev-sample products' stock. Fixed by snapshotting and restoring
+`current_stock` directly in `afterAll`, and the drift it had already caused was corrected by hand.
+
+**Manual mobile pass** (`resize_window` at 375×812) covered the homepage, a product page, cart,
+the checkout empty-state and address form, `/my-yacht`, and `/admin`. Two real, blocking issues
+found and fixed, both now shared via one `MobileNav` component (`src/components/nav/mobile-nav.tsx`):
+the customer header's nav was `hidden md:flex` with no mobile equivalent at all, so
+`/find-product`, `/assistant`, and `/my-yacht` were unreachable from the header on a phone; and the
+admin header's 8-link nav had no responsive handling and silently overflowed the whole page body
+horizontally (confirmed via `document.body.scrollWidth`) instead of wrapping. A smaller, related
+issue in `/admin/inventory`'s "Record a movement" form was also fixed: the product `<select>` grew
+to fit its longest option text un-constrained, which was the other source of the same page's
+horizontal overflow.
+
 ## Supabase
 
 Own project (not shared with Eco Air Sense — see `docs/architecture.md` §2): `ect-marine-store`,
@@ -272,5 +328,5 @@ deleted.
 
 ## Next step
 
-Phase 9 (Days 28–29): testing — the full checklist in `docs/implementation-plan.md`, plus a
-mobile/desktop manual pass.
+Phase 10 (Day 30): soft launch to selected ECT customers, per `docs/implementation-plan.md` and
+§44/§56 of the master spec.
