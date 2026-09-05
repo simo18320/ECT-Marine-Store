@@ -94,7 +94,7 @@ export async function sendAssistantMessage(
     payload = { reply: FALLBACK_MESSAGE, known: [], recommendation: null, needsVerification: [] };
   }
 
-  const { allowed, violations } = checkAllowlist(payload, allowedSkus);
+  const { allowed, violations } = checkAllowlist(payload, allowedSkus, trimmed);
   if (!allowed) {
     // Code-enforced backstop (ai-engine.md §3) — a SKU outside this turn's retrieved context was
     // mentioned, so the model's response is discarded wholesale rather than trying to patch it.

@@ -110,15 +110,15 @@ DISCOVERED/UNDER_REVIEW rejection enforced in `lib/suppliers/service.ts`. See RE
 **Exit criteria:** the assistant correctly refuses to state a spec/compatibility/stock fact not
 present in retrieved data (tested with at least 3 deliberately out-of-scope questions).
 
-**Built; exit criteria partially verified.** `ANTHROPIC_API_KEY` is unset in this environment, so
-no real Claude call has been made yet — the refusal mechanism itself (`lib/ai/postprocess.ts`'s
-SKU allowlist check) has 8 unit tests covering exactly the adversarial cases the exit criteria
-describes (a hallucinated SKU in free text, a hallucinated product in a recommendation block), and
-a live browser pass confirmed the full pipeline — sign-in, `/assistant`, a deliberately-fictional
-product question, `ai_conversations`/`ai_messages` rows — doesn't crash and falls back to the exact
-required message when Claude itself is unreachable. What's still owed once a real key is supplied:
-running the same 3+ adversarial questions through an actual model call to confirm postprocess
-catches a *real* hallucination, not just the simulated ones in the test suite.
+**Done.** Verified against a real `claude-sonnet-5` model with 3 deliberately out-of-scope
+questions (fictional product, exact stock count, a problem category with zero verified
+compatibility data) — all three produced correct, well-reasoned refusals rather than fabrication.
+One real bug surfaced and fixed during this pass: the SKU allowlist check originally flagged
+Claude's own correct refusal as a violation when it repeated a customer-mentioned fictional SKU
+back to say "I don't recognize this" — `lib/ai/postprocess.ts`'s `checkAllowlist` now exempts a
+SKU already present in the customer's own message from that check (a recommendation naming that
+same product is still always rejected). See README.md's "AI assistant" section for the full
+verification detail.
 
 ## Phase 9 — Testing (Days 28–29)
 

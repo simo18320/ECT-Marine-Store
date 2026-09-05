@@ -28,16 +28,40 @@ export interface PostprocessResult {
   violations: string[];
 }
 
+export function extractSkuTokens(text: string): string[] {
+  return [...new Set([...text.matchAll(SKU_PATTERN)].map((m) => m[0]))];
+}
+
 export function extractMentionedSkus(payload: AssistantResponsePayload): string[] {
-  const mentioned = new Set<string>();
-  for (const match of payload.reply.matchAll(SKU_PATTERN)) mentioned.add(match[0]);
+  const mentioned = new Set<string>(extractSkuTokens(payload.reply));
   for (const product of payload.recommendation?.products ?? []) mentioned.add(product.sku);
   return [...mentioned];
 }
 
-export function checkAllowlist(payload: AssistantResponsePayload, allowedSkus: ReadonlySet<string>): PostprocessResult {
-  const violations = extractMentionedSkus(payload).filter((sku) => !allowedSkus.has(sku));
-  return { allowed: violations.length === 0, violations };
+/**
+ * `recommendation.products` is held to the strict allowlist always — a recommendation naming a
+ * product outside the retrieved context is exactly the hallucination this check exists to catch.
+ * A SKU-shaped token in the free-text `reply`, though, is allowed if the *customer's own message*
+ * already contained it: refusing to confirm something the customer asked about by name ("I don't
+ * have information on ECT-TURBO-9000") means repeating that name back, which is not the model
+ * asserting a new fact — treating it as a violation would reject a correct refusal for the wrong
+ * reason (caught via a real adversarial test during Phase 8 verification, not a hypothetical).
+ */
+export function checkAllowlist(
+  payload: AssistantResponsePayload,
+  allowedSkus: ReadonlySet<string>,
+  userMessage = "",
+): PostprocessResult {
+  const userMentioned = new Set(extractSkuTokens(userMessage));
+  const recommendationSkus = (payload.recommendation?.products ?? []).map((p) => p.sku);
+  const replySkus = extractSkuTokens(payload.reply);
+
+  const violations = [
+    ...recommendationSkus.filter((sku) => !allowedSkus.has(sku)),
+    ...replySkus.filter((sku) => !allowedSkus.has(sku) && !userMentioned.has(sku)),
+  ];
+
+  return { allowed: violations.length === 0, violations: [...new Set(violations)] };
 }
 
 // ai-engine.md §3's required fallback when data is missing, used verbatim so it's recognizable

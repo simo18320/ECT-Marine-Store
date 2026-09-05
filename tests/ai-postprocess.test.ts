@@ -66,4 +66,30 @@ describe("checkAllowlist", () => {
     const p = payload({ reply: "I don't have enough verified information to confirm this." });
     expect(checkAllowlist(p, new Set())).toEqual({ allowed: true, violations: [] });
   });
+
+  // Caught live during Phase 8 verification: Claude correctly refused to confirm a fictional
+  // product the customer asked about by name, but repeating that name back to say "I don't have
+  // information on this" was originally flagged as a violation — rejecting a correct refusal for
+  // the wrong reason.
+  it("allows the reply to repeat back a SKU the customer's own message already contained", () => {
+    const p = payload({ reply: "I don't have any information on ECT-TURBO-9000 in our catalogue." });
+    const result = checkAllowlist(p, new Set(["ECT-SED-10-5M"]), "Is the ECT-TURBO-9000 compatible with my UV system?");
+    expect(result).toEqual({ allowed: true, violations: [] });
+  });
+
+  it("still rejects a recommendation naming a product the customer mentioned, even if the customer named it first", () => {
+    const p = payload({
+      reply: "Here's a suggestion.",
+      recommendation: { products: [{ sku: "ECT-TURBO-9000", name: "Turbo 9000", reason: "you asked about it" }], ruleSource: "recommendation_engine" },
+    });
+    const result = checkAllowlist(p, new Set(["ECT-SED-10-5M"]), "Is the ECT-TURBO-9000 compatible with my UV system?");
+    expect(result.allowed).toBe(false);
+    expect(result.violations).toContain("ECT-TURBO-9000");
+  });
+
+  it("still rejects a genuinely new hallucinated SKU the customer never mentioned", () => {
+    const p = payload({ reply: "Try the ECT-TURBO-9000 instead." });
+    const result = checkAllowlist(p, new Set(["ECT-SED-10-5M"]), "What water filters do you sell?");
+    expect(result).toEqual({ allowed: false, violations: ["ECT-TURBO-9000"] });
+  });
 });
