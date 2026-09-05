@@ -1,8 +1,15 @@
 # ECT Marine Store — Database Design
 
-Status: **Draft for approval**. This document describes the schema implemented in
-`database/migrations/`. The migrations are the source of truth for exact columns/constraints;
-this doc explains *why* the shape is what it is.
+Status: **Applied** (project `pwchzixxritrieedwuqz`, `eu-west-1`). This document describes the
+schema implemented in `database/migrations/`. The migrations are the source of truth for exact
+columns/constraints; this doc explains *why* the shape is what it is.
+
+One migration exists beyond what's narrated below: `0010_security_hardening.sql`, a post-deploy
+fix for issues the Supabase security advisor caught after `0001`–`0009` were applied (missing RLS
+on `equipment_types`, unpinned function `search_path`, RLS helper functions directly RPC-callable).
+See its header comment and `docs/security.md` for detail — the table/column design itself didn't
+change, only where the four RLS helper functions live (`private` schema instead of `public`) and
+one extra table's RLS.
 
 ## 1. Design principles
 

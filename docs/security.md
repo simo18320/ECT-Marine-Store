@@ -1,15 +1,22 @@
 # ECT Marine Store — Security
 
-Status: **Draft for approval** — summary now, full policy detail (RLS policy SQL, rate-limit
-config, GDPR data-retention specifics) to be filled in during Phase 1 as it's implemented, per
-architecture.md §6. This file must stay in sync with the actual code (§54 of the master spec);
-treat drift between this doc and `database/migrations/0009_rls_policies.sql` as a bug.
+Status: **Partially implemented** — RLS, roles, and Auth are live (Phase 1); rate-limit config and
+GDPR data-retention mechanics are still Phase 2+ design only. This file must stay in sync with the
+actual code (§54 of the master spec); treat drift between this doc and
+`database/migrations/0009_rls_policies.sql` / `0010_security_hardening.sql` as a bug.
 
 ## 1. Roles
 
-`user_role` enum: `customer`, `b2b_user`, `b2b_admin`, `ect_operator`, `ect_admin`, `super_admin`.
-Role is stored on `profiles.role` and mirrored into the Supabase JWT custom claim so RLS policies
-and server-side route guards read the same source without an extra query per request.
+`user_role` enum: `customer`, `b2b_user`, `b2b_admin`, `ect_operator`, `ect_admin`, `super_admin`,
+stored on `profiles.role`. **Correction from the original design:** role is *not* mirrored into a
+JWT custom claim — RLS policies call a `stable security definer` SQL helper
+(`private.is_ect_staff()` / `private.is_ect_admin()`) that looks up `profiles.role` for
+`auth.uid()` on each check. This is a live DB read per policy evaluation rather than a JWT claim
+read, which is simpler and was fast enough to ship with; revisit only if it shows up as a real
+bottleneck. These helper functions live in a `private` schema (not `public`) specifically so
+PostgREST never exposes them as directly callable RPC endpoints — `authenticated`/`anon` still have
+`EXECUTE` on them (required for RLS policy evaluation), they're just not reachable via
+`/rest/v1/rpc/...`. See migration `0010_security_hardening.sql`.
 
 ## 2. Enforcement layers
 
