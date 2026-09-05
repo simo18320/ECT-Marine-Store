@@ -6,11 +6,10 @@ Equipment Register, a deterministic Maintenance Engine, and an AI Procurement/Re
 
 ## Status
 
-**Phase 4 (Days 12–15) done.** Phases 0–3 (architecture, Next.js scaffold, Supabase/Auth,
-catalogue/search/cart, Stripe checkout) are complete. The admin dashboard — products (+ images/
-docs), categories, inventory (movements + reorder points), orders (status override with audit
-logging), customers — is live at `/admin`, gated by the `ect_operator`/`ect_admin` role split that
-was already built into RLS back in Phase 1. Phase 5 (My Yacht) is next.
+**Phase 5 (Days 16–19) done.** Phases 0–4 (architecture, Next.js scaffold, Supabase/Auth,
+catalogue/search/cart, Stripe checkout, admin dashboard) are complete. My Yacht — yacht profiles,
+equipment/filter registers, QR codes, live replacement-status computation — is live at
+`/my-yacht`. Phase 6 (deterministic recommendation engine) is next.
 
 - [`docs/`](docs/) — architecture, database, business rules, AI engine, procurement, logistics,
   security, and the 30-day implementation plan.
@@ -31,7 +30,35 @@ was already built into RLS back in Phase 1. Phase 5 (My Yacht) is next.
   (breadcrumb + subcategories + products, in-stock filter), `/products/[slug]` (full product page:
   specs, compatibility, bundle contents, recommendations, purchase panel), `/search` (Postgres
   full-text), `/cart` (client-side, localStorage-backed), `/checkout` (address selection + Stripe
-  Checkout redirect), `/account` (profile, addresses, orders), `/login`, `/admin` (see below).
+  Checkout redirect), `/account` (profile, addresses, orders), `/login`, `/admin` (see below),
+  `/my-yacht` (see below).
+
+## My Yacht
+
+`/my-yacht` → yacht list/create → `/my-yacht/[yachtId]` (dashboard: equipment register, filter
+register, both with a live-computed replacement status badge) → add/edit equipment or filters,
+each with a real QR code (the `qrcode` package, generated server-side to a data URL — no external
+service, no client-side JS). The QR encodes `/equipment/[token]` or `/filters/[token]`, which
+resolve through the same RLS as everything else (`is_yacht_member`) — scanning a sticker on a
+yacht crew member's already-authenticated phone opens the record directly; a truly public,
+unauthenticated "safe summary" view (§15 of the master spec) is a deferred enhancement, not built
+in Phase 5.
+
+Replacement status is **computed live**, not read from the schema's `replacement_schedules` table:
+that table's write policy is staff-only, so a customer's own session can't populate it, and
+business-rules.md always described it as staff/cron-recalculated rather than customer-app-writable
+— `lib/maintenance/rules.ts` (`computeFilterReplacementStatus`, `computeEquipmentReplacementStatus`,
+14 unit tests) is the actual source of truth for what a customer sees today. Filters use
+`installation_date + replacement_interval_days` directly; equipment is a little richer — an
+explicit `next_maintenance_date` override wins if set, otherwise it falls back to
+`last_maintenance_date` (or `installation_date` if never serviced) plus the interval.
+
+Verified live end-to-end with a throwaway customer account (deleted after): created a yacht,
+added a Filter Housing installed 40 days ago with a 30-day interval (correctly showed
+**Overdue**, computed next-due date included), added a CTO filter installed 20 days ago with a
+90-day interval (correctly showed **OK**), then actually navigated to both generated QR URLs
+(reading the real token out of the database, simulating a scan) and confirmed each resolved to the
+right record with the right computed status and due date.
 
 ## Admin dashboard
 
@@ -128,5 +155,6 @@ deleted.
 
 ## Next step
 
-Phase 5 (Days 16–19): My Yacht — yacht profile, equipment register, filter register, QR codes,
-replacement dates. See `docs/implementation-plan.md`.
+Phase 6 (Days 20–22): deterministic recommendation engine — problem selector, compatibility-based
+ranking wired to real `product_compatibility` data, recommended kits on product/category pages.
+See `docs/implementation-plan.md`.

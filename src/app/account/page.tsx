@@ -76,6 +76,12 @@ export default async function AccountPage() {
           >
             Orders
           </Link>
+          <Link
+            href="/my-yacht"
+            className="rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-secondary"
+          >
+            My Yacht
+          </Link>
           {profile && ["ect_operator", "ect_admin", "super_admin"].includes(profile.role) && (
             <Link
               href="/admin"
@@ -87,7 +93,7 @@ export default async function AccountPage() {
         </div>
 
         <div className="mt-6 rounded-md border border-dashed border-border p-4 text-sm text-muted-foreground">
-          My Yacht and maintenance history land here in a later phase (see{" "}
+          Maintenance history and service requests land here in a later phase (see{" "}
           <code>docs/implementation-plan.md</code>).
         </div>
       </main>

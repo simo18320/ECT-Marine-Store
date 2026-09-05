@@ -64,7 +64,17 @@ hard-coded per status):
 | `UNKNOWN` | no `installation_date` or no `replacement_interval_days` on record |
 
 `replacement_schedules` rows are recalculated by a scheduled job (daily), not computed live on
-every page render, so dashboard/alert queries stay a simple indexed read.
+every page render, so dashboard/alert queries stay a simple indexed read — that was the original
+design intent, but it assumes a cron/staff-side writer that doesn't exist yet (`replacement_
+schedules`'s own RLS write policy is staff-only, since a customer's own session was never meant to
+populate it directly). **Correction from Phase 5's actual implementation:** with no cron
+infrastructure in place yet, `lib/maintenance/rules.ts` computes filter/equipment status live from
+`installation_date`/`replacement_interval_days` (or, for equipment, `next_maintenance_date` →
+`last_maintenance_date` → `installation_date`, in that priority order) on every My Yacht page
+render — correct today because a single customer's own register is a handful of rows, not a
+fleet-wide query. `replacement_schedules` stays schema-ready and unpopulated; a future cron job
+writing into it (for efficient fleet-wide staff queries, e.g. "every overdue filter across every
+customer") is additive, not a rework of this logic.
 
 ## 4. Compatibility engine
 
