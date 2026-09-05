@@ -6,11 +6,13 @@ Equipment Register, a deterministic Maintenance Engine, and an AI Procurement/Re
 
 ## Status
 
-**Phase 7 (Days 23–25) done.** Phases 0–6 (architecture, Next.js scaffold, Supabase/Auth,
-catalogue/search/cart, Stripe checkout, admin dashboard, My Yacht, recommendation engine) are
-complete. Procurement — suppliers, landed cost, RFQs, quotes, supplier scoring, and the approval
-gate into a purchase order — is live under `/admin/suppliers` and `/admin/procurement`. Phase 8
-(AI) is next.
+**Phase 8 (Days 26–27) built, live Claude verification pending a key.** Phases 0–7 (architecture,
+Next.js scaffold, Supabase/Auth, catalogue/search/cart, Stripe checkout, admin dashboard, My Yacht,
+recommendation engine, procurement) are complete. The customer-facing AI assistant — `/assistant`
+— is live: retrieval layer, Claude integration, and the SKU-allowlist safety check are all built
+and unit-tested, but `ANTHROPIC_API_KEY` is unset in this environment, so no real model call has
+been made yet. See "AI assistant" below for exactly what was and wasn't verified. Phase 9
+(testing) is next once a key is supplied and that verification closes out.
 
 - [`docs/`](docs/) — architecture, database, business rules, AI engine, procurement, logistics,
   security, and the 30-day implementation plan.
@@ -140,6 +142,38 @@ prior phase's throwaway-user SQL insert (this one included) had only ever set
 etc. `NULL` by column default. Explicitly setting all of them to `''` on insert fixed it
 immediately — worth remembering for every throwaway account created in later phases too.
 
+## AI assistant
+
+`/assistant` — ai-engine.md's pipeline exactly: retrieval (`lib/ai/retrieval.ts`) pulls typed,
+scoped data from Supabase; a customer message matching the fixed problem taxonomy
+(`lib/recommendations/problems.ts`'s new `detectProblem`) runs the *same* deterministic
+recommendation engine Phase 6 built; only then is Claude given that already-resolved data as
+context and asked to explain it in natural language via a forced tool call
+(`lib/ai/client.ts`, `claude-sonnet-5`) — it never sees raw table access and has no tool that can
+write anything (place an order, issue a refund, approve a supplier). `lib/ai/postprocess.ts` then
+checks every SKU the model mentions (in its reply or in a recommendation) against the SKUs actually
+retrieved for that turn; any mention outside that set discards the whole response in favor of
+ai-engine.md §3's required fallback line, not just a patched sentence. Every turn is logged to
+`ai_conversations`/`ai_messages`; a recommendation that survives the allowlist check is also logged
+to `ai_recommendations` with `confidence: 1.0` — unlike AI-sourced supplier discovery
+(procurement.md §3), every product here already passed the same verified-compatibility filter as
+the deterministic engine, so there's no genuine model-estimated uncertainty to report.
+
+**What's verified, and what isn't yet:** `ANTHROPIC_API_KEY` is unset in this environment, so no
+real Claude call has been made. `lib/ai/postprocess.ts` has 8 unit tests exercising exactly the
+adversarial cases the Phase 8 exit criteria describes — a hallucinated SKU in free text, a
+hallucinated product in a structured recommendation — both correctly rejected; `detectProblem` has
+5 more. Live in the browser, signed in as a throwaway customer with a test yacht: `/assistant`
+rendered correctly (yacht selector, empty state), asking a deliberately fictional product question
+("Is the ECT-TURBO-9000 compatible with my yacht's UV system?") produced no crash and returned the
+exact required fallback text, and `ai_conversations`/`ai_messages` recorded both turns correctly
+with the right `yacht_id`. What that browser pass does *not* prove is postprocess intercepting a
+*real* model hallucination — every call fails at the Anthropic API layer first (no key) and
+`service.ts`'s catch block returns the same safe fallback regardless of what the question was, so
+right now every question gets that answer, not just out-of-scope ones. Supplying a real key and
+re-running the same adversarial questions is the one thing still owed before Phase 8's exit
+criteria is fully closed.
+
 ## Admin dashboard
 
 `/admin` reuses the exact `is_ect_staff()`/`is_ect_admin()` RLS split built in Phase 1 — no new
@@ -235,5 +269,6 @@ deleted.
 
 ## Next step
 
-Phase 8 (Days 26–27): AI — retrieval layer, the customer-facing assistant, maintenance-explanation
-and yacht-aware answers, response allowlist checking. See `docs/implementation-plan.md`.
+Supply `ANTHROPIC_API_KEY` and re-run Phase 8's 3+ adversarial questions through a real Claude call
+to fully close its exit criteria (see "AI assistant" above), then Phase 9 (Days 28–29): testing —
+the full checklist in `docs/implementation-plan.md`, plus a mobile/desktop manual pass.

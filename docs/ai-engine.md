@@ -38,6 +38,17 @@ Each of these functions returns `{ data, source: 'supabase', asOf: timestamp }`.
 assembled for Claude includes this provenance so the model can (and must) say *when* the answer
 uses a source that might be stale, rather than presenting everything as equally current.
 
+**As shipped in Phase 8:** `getReplacementStatus` doesn't read a `replacement_schedules` table —
+there still isn't a writer for it (business-rules.md §3's Phase 5 correction stands: staff/cron-
+only, nothing populates it in MVP). It's the same live computation `getYachtContext` already does
+(`lib/maintenance/rules.ts`), exposed as its own retrieval function only because this contract
+names it separately. `getProductContext` is `lib/products/queries.ts`'s existing full-text search
+(`search_vector`, already availability-filtered via the Phase 0 computed field) rather than a new
+equipment-type lookup — a customer's free-text message is matched by search, not by picking an
+equipment type first; `getRecommendations` still goes through the equipment-type path when the
+message matches the fixed problem taxonomy (`lib/recommendations/problems.ts`'s new
+`detectProblem`, keyword-matched, same taxonomy Phase 6's "Find the right product" uses).
+
 ## 3. Hard safety rules (enforced in code, not just prompted)
 
 Matches §18/§48 of the master spec, made concrete:

@@ -4,7 +4,7 @@ import type { Database } from "@/types/database";
 
 // Only these prefixes require an authenticated session. The storefront (/, /shop, /products,
 // /categories, /cart, /checkout, /services) stays public — see architecture.md §5.
-const PROTECTED_PREFIXES = ["/account", "/admin", "/my-yacht", "/equipment", "/filters"];
+const PROTECTED_PREFIXES = ["/account", "/admin", "/my-yacht", "/equipment", "/filters", "/assistant"];
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
