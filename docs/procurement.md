@@ -43,6 +43,11 @@ MVP note: "AI web/search integration" depends on which search tool is wired up w
 paste in candidate supplier info and the AI structures/summarizes it, rather than the system
 autonomously crawling the web.
 
+**As shipped in Phase 7:** no AI integration exists yet at all (that's Phase 8's ai-engine.md), so
+"semi-automated" for now means plain manual entry — `/admin/suppliers` is a CRUD form, not an
+AI-assisted paste-and-structure flow. `source`/`confidence` remain on the schema and the UI shows
+them when set, ready for Phase 8 to populate; a manually-entered supplier simply leaves them null.
+
 ## 4. Landed cost engine
 
 See business-rules.md §1 for the formula. Implementation note: `supplier_quotes.landed_cost` is
@@ -50,6 +55,11 @@ computed server-side (`lib/suppliers/rules.ts`) the moment a quote has enough fi
 (unit price + shipping + at minimum one of duties/handling), and left `null` otherwise — the UI
 must render "incomplete — purchase price only" rather than a number when any component is missing
 (§21 "never use an incomplete cost calculation while presenting a margin as definitive").
+
+`supplier_quotes` only had a `shipping_cost` column from migration `0005` — no columns existed to
+check duties/handling completeness against. Migration `0015` adds `duties_cost`/`handling_cost` so
+this rule has something to actually gate on; `payment_costs`/`other_known_costs` from
+business-rules.md §1's full formula stay a V2 addition.
 
 ## 5. RFQ engine
 
@@ -61,6 +71,11 @@ the RFQ *text* (a formatted request document/email body) from these structured f
   send it (copy the draft into email, or a manual "mark as sent" action that just updates
   `rfq_suppliers.sent_at`).
 - Supplier responses are entered manually into `supplier_quotes` in MVP (no inbound-email parsing).
+
+**As shipped in Phase 7:** `lib/suppliers/rfq-draft.ts` generates that text as a deterministic
+template from the structured fields, not an actual Claude call — no AI integration exists in this
+codebase yet (Phase 8). It still satisfies the rule above either way: nothing is ever sent
+automatically, an admin always reviews the text and sends it themselves.
 
 ## 6. Approval gate
 

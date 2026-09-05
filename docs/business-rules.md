@@ -101,8 +101,8 @@ products absent from it.
 
 ## 6. Supplier scoring
 
-Default weights (admin-configurable, stored not hard-coded — see database `suppliers`/scoring
-config, Phase 7):
+Default weights (admin-configurable, stored not hard-coded — the `supplier_scoring_weights`
+singleton row added in migration `0014`, Phase 7):
 
 | Factor | Weight |
 |---|---|
@@ -114,10 +114,17 @@ config, Phase 7):
 | Shipping | 5% |
 | Payment terms | 5% |
 
-Score is 0–100, each factor normalized 0–100 before weighting. Labels derived from the same score
-set: `BEST_PRICE` (lowest price among qualified quotes), `FASTEST` (lowest lead time),
-`BEST_VALUE` (highest weighted score), `PREFERRED_SUPPLIER` (supplier.status = 'preferred' and
-qualifies at all). These are presentation labels, not stored states.
+Score is 0–100, each factor normalized 0–100 before weighting: price/lead-time/shipping are
+normalized relative to the other quotes on the same RFQ (there is no absolute scale for them);
+MOQ fit is scored against the RFQ's actual requested quantity, not other quotes; payment terms
+score on disclosure only (freeform text, no MVP parsing of favorability). Quality and reliability
+are `suppliers.quality_score`/`reliability_score` — a plain admin-entered 0–100 rating, since there
+is no completed-order history yet to compute either from automatically. A missing value on any
+factor scores as worst-case (0), never an assumed average — `lib/suppliers/rules.ts`
+(`rankQuotes`, 12 unit tests) is the implementation. Labels derived from the same score set:
+`BEST_PRICE` (lowest price among qualified quotes), `FASTEST` (lowest lead time), `BEST_VALUE`
+(highest weighted score), `PREFERRED_SUPPLIER` (supplier.status = 'preferred' and qualifies at
+all). These are presentation labels, not stored states.
 
 ## 7. Procurement approval
 

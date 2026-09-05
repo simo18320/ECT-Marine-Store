@@ -1929,6 +1929,8 @@ export type Database = {
         Row: {
           created_at: string
           currency: string
+          duties_cost: number | null
+          handling_cost: number | null
           id: string
           landed_cost: number | null
           lead_time_days: number | null
@@ -1944,6 +1946,8 @@ export type Database = {
         Insert: {
           created_at?: string
           currency?: string
+          duties_cost?: number | null
+          handling_cost?: number | null
           id?: string
           landed_cost?: number | null
           lead_time_days?: number | null
@@ -1959,6 +1963,8 @@ export type Database = {
         Update: {
           created_at?: string
           currency?: string
+          duties_cost?: number | null
+          handling_cost?: number | null
           id?: string
           landed_cost?: number | null
           lead_time_days?: number | null
@@ -1988,6 +1994,42 @@ export type Database = {
           },
         ]
       }
+      supplier_scoring_weights: {
+        Row: {
+          id: boolean
+          lead_time_weight: number
+          moq_weight: number
+          payment_terms_weight: number
+          price_weight: number
+          quality_weight: number
+          reliability_weight: number
+          shipping_weight: number
+          updated_at: string
+        }
+        Insert: {
+          id?: boolean
+          lead_time_weight?: number
+          moq_weight?: number
+          payment_terms_weight?: number
+          price_weight?: number
+          quality_weight?: number
+          reliability_weight?: number
+          shipping_weight?: number
+          updated_at?: string
+        }
+        Update: {
+          id?: boolean
+          lead_time_weight?: number
+          moq_weight?: number
+          payment_terms_weight?: number
+          price_weight?: number
+          quality_weight?: number
+          reliability_weight?: number
+          shipping_weight?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       suppliers: {
         Row: {
           certifications: string[]
@@ -2000,6 +2042,8 @@ export type Database = {
           name: string
           notes: string | null
           payment_terms: string | null
+          quality_score: number | null
+          reliability_score: number | null
           source: string | null
           status: Database["public"]["Enums"]["supplier_status"]
           updated_at: string
@@ -2016,6 +2060,8 @@ export type Database = {
           name: string
           notes?: string | null
           payment_terms?: string | null
+          quality_score?: number | null
+          reliability_score?: number | null
           source?: string | null
           status?: Database["public"]["Enums"]["supplier_status"]
           updated_at?: string
@@ -2032,6 +2078,8 @@ export type Database = {
           name?: string
           notes?: string | null
           payment_terms?: string | null
+          quality_score?: number | null
+          reliability_score?: number | null
           source?: string | null
           status?: Database["public"]["Enums"]["supplier_status"]
           updated_at?: string

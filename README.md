@@ -6,18 +6,19 @@ Equipment Register, a deterministic Maintenance Engine, and an AI Procurement/Re
 
 ## Status
 
-**Phase 6 (Days 20–22) done.** Phases 0–5 (architecture, Next.js scaffold, Supabase/Auth,
-catalogue/search/cart, Stripe checkout, admin dashboard, My Yacht) are complete. The deterministic
-recommendation engine — "Find the right product" at `/find-product` — is live. Phase 7
-(procurement) is next.
+**Phase 7 (Days 23–25) done.** Phases 0–6 (architecture, Next.js scaffold, Supabase/Auth,
+catalogue/search/cart, Stripe checkout, admin dashboard, My Yacht, recommendation engine) are
+complete. Procurement — suppliers, landed cost, RFQs, quotes, supplier scoring, and the approval
+gate into a purchase order — is live under `/admin/suppliers` and `/admin/procurement`. Phase 8
+(AI) is next.
 
 - [`docs/`](docs/) — architecture, database, business rules, AI engine, procurement, logistics,
   security, and the 30-day implementation plan.
-- [`database/migrations/`](database/migrations/) — the Supabase migrations (`0001`–`0013`)
+- [`database/migrations/`](database/migrations/) — the Supabase migrations (`0001`–`0015`)
   implementing the MVP schema from `docs/database.md`, applied to the live project
-  (`pwchzixxritrieedwuqz`, region `eu-west-1`). `0010`–`0013` are post-Phase-0 additions (security
-  hardening, full-text search, public stock-status exposure) — see `docs/database.md`'s intro for
-  what each does.
+  (`pwchzixxritrieedwuqz`, region `eu-west-1`). `0010`–`0015` are post-Phase-0 additions (security
+  hardening, full-text search, public stock-status exposure, supplier scoring, landed-cost
+  columns) — see `docs/database.md`'s intro for what each does.
 - [`database/schema.sql`](database/schema.sql) — a consolidated, read-only concatenation of
   `0001`–`0009` for reviewing the original schema in one file (predates `0010`–`0013`).
 - [`database/seed.sql`](database/seed.sql) — the MVP category tree and equipment-type vocabulary,
@@ -81,6 +82,49 @@ selecting a throwaway test yacht with a matching Filter Housing installed correc
 sediment-problem results to "Exact match"; the same yacht queried for "Microbiological risk" (no
 UV equipment registered there) correctly fell back to "category fit" rather than falsely claiming
 an exact match.
+
+## Procurement
+
+`/admin/suppliers` (CRUD, staff-managed) and `/admin/procurement` (reorder-flag dashboard, RFQs)
+implement procurement.md's flywheel from "flag" through to a purchase order:
+
+- **Flag**: `available_stock <= reorder_point` (business-rules.md §2) surfaces a product on the
+  dashboard with a one-click "Create RFQ" prefilled with its `reorder_quantity`. This only flags —
+  nothing is auto-purchased.
+- **RFQ**: an admin picks the product/quantity/spec/destination/date and one or more non-blocked
+  suppliers; `lib/suppliers/rfq-draft.ts` renders ready-to-send text per supplier (a deterministic
+  template today, not an actual Claude call — no AI integration exists until Phase 8) and a
+  "mark as sent" action records `rfq_suppliers.sent_at`.
+- **Quotes → landed cost**: entering a quote computes `landed_cost` the moment unit price +
+  shipping + at least one of duties/handling are known (migration `0015` added the duties/handling
+  columns that were missing from Phase 0's schema); otherwise the UI honestly shows "incomplete —
+  purchase price only" rather than a number (business-rules.md §1, §21).
+- **Scoring**: every quote on an RFQ is ranked by `lib/suppliers/rules.ts` (`rankQuotes`, 12 unit
+  tests) against business-rules.md §6's weighted formula, re-normalized across the current quote
+  set on every new quote. Quality/reliability are `suppliers.quality_score`/`reliability_score` —
+  a plain admin-entered 0–100 rating (migration `0014`), since there's no completed-order history
+  yet to compute either from automatically; a missing rating scores as worst-case, not average.
+  `BEST_PRICE`/`FASTEST`/`BEST_VALUE`/`PREFERRED_SUPPLIER` labels are computed at render time, not
+  stored, so re-weighting later needs no migration.
+- **Approval gate**: awarding a quote (admin-only) creates a real `supplier_orders` +
+  `supplier_order_items` row, `approved_by`/`approved_at` set immediately by that admin
+  (business-rules.md §7) — and is rejected in `lib/suppliers/service.ts` if the quote's supplier is
+  still `discovered`/`under_review` (procurement.md §2's hard rule: a lead is not an approved
+  source). The database's own `supplier_orders_approval_required` check constraint is a second,
+  independent enforcement of the same "no PO without an approver" rule.
+
+Verified with a live fixture directly against the RLS-protected schema as an `ect_admin` session
+(two suppliers — one `discovered`, one `qualified` — an RFQ, and two quotes): confirmed anon/
+non-staff read zero suppliers while the admin session read both; confirmed the discovered
+supplier's quote actually **out-scored** the qualified one on price/lead-time alone (the concrete
+case the eligibility rule exists to catch) and that awarding it is rejected while the lower-scored
+qualified quote's award succeeds and produces the expected PO row; confirmed the DB check
+constraint independently rejects a non-draft PO with no approver even bypassing the app layer; and
+confirmed `computeLandedCost`'s complete/incomplete branches against real inserted rows. This
+substituted for a full browser click-through this session because Supabase Auth's password grant
+was returning `500 Database error querying schema` for this project throughout verification (health
+endpoint was up, no incident was posted on Supabase's status page, and profiles/RLS/extensions all
+checked out normal) — a click-through pass is still owed once that clears.
 
 ## Admin dashboard
 
@@ -177,5 +221,7 @@ deleted.
 
 ## Next step
 
-Phase 7 (Days 23–25): procurement — supplier database, landed cost calculation, procurement
-dashboard, manual RFQ generation. See `docs/implementation-plan.md`.
+Phase 8 (Days 26–27): AI — retrieval layer, the customer-facing assistant, maintenance-explanation
+and yacht-aware answers, response allowlist checking. See `docs/implementation-plan.md`. A
+browser click-through of Phase 7's admin UI is also still owed once Supabase Auth's password-grant
+issue (see "Procurement" above) clears.

@@ -95,6 +95,11 @@ hand-checked expected result for at least 5 test scenarios.
 **Exit criteria:** an admin can take a low-stock product from flag → RFQ → recorded quotes →
 landed cost comparison, entirely manually but fully recorded in the schema.
 
+**Done.** Exceeded slightly: the approval gate (procurement.md §6) is also built — a qualified+
+quote can be awarded into a real `supplier_orders`/`supplier_order_items` row, admin-only, with the
+DISCOVERED/UNDER_REVIEW rejection enforced in `lib/suppliers/service.ts`. See README.md's
+"Procurement" section for what was verified and how.
+
 ## Phase 8 — AI (Days 26–27)
 
 - Day 26: Retrieval layer (ai-engine.md §2) + Claude integration for the customer-facing

@@ -8,6 +8,8 @@ const NAV_LINKS = [
   { href: "/admin/products", label: "Products" },
   { href: "/admin/categories", label: "Categories" },
   { href: "/admin/inventory", label: "Inventory" },
+  { href: "/admin/suppliers", label: "Suppliers" },
+  { href: "/admin/procurement", label: "Procurement" },
   { href: "/admin/orders", label: "Orders" },
   { href: "/admin/customers", label: "Customers" },
 ];
