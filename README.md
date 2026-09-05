@@ -6,9 +6,10 @@ Equipment Register, a deterministic Maintenance Engine, and an AI Procurement/Re
 
 ## Status
 
-**Phase 2 (Days 4–7) done.** Phase 0 (architecture/docs/migrations) and Phase 1 (Next.js scaffold,
-Supabase project, Auth) are complete; catalogue browsing, product pages, search, filtering, and
-cart are live. Phase 3 (checkout — Stripe, real orders) is next.
+**Phase 3 (Days 8–11) done.** Phases 0–2 (architecture, Next.js scaffold, Supabase/Auth, catalogue/
+search/cart) are complete. Checkout — Stripe, real orders, webhook-driven payment status, order
+confirmation email — is live and was verified with a real Stripe test-mode payment. Phase 4
+(admin dashboard) is next.
 
 - [`docs/`](docs/) — architecture, database, business rules, AI engine, procurement, logistics,
   security, and the 30-day implementation plan.
@@ -28,7 +29,31 @@ cart are live. Phase 3 (checkout — Stripe, real orders) is next.
 - `src/`, `public/` — Next.js app: homepage (dynamic category grid), `/categories/[slug]`
   (breadcrumb + subcategories + products, in-stock filter), `/products/[slug]` (full product page:
   specs, compatibility, bundle contents, recommendations, purchase panel), `/search` (Postgres
-  full-text), `/cart` (client-side, localStorage-backed), `/login`, `/account`.
+  full-text), `/cart` (client-side, localStorage-backed), `/checkout` (address selection + Stripe
+  Checkout redirect), `/account` (profile, addresses, orders), `/login`.
+
+## Checkout & payments
+
+Prices/VAT/stock are always re-read from the database server-side at checkout — never trusted
+from the client cart (`lib/orders/service.ts`). Order status only ever moves via the Stripe
+webhook handler (`app/api/webhooks/stripe/route.ts` → `lib/orders/webhook-handlers.ts`), never the
+client, matching business-rules.md §8. This was verified with a **real Stripe test-mode payment**
+(hosted Checkout, test card 4242 4242 4242 4242), then a signed-webhook replay test proving
+idempotency: after two deliveries of the identical event, exactly one order, one payment, and one
+inventory movement existed (stock decremented exactly once). Order confirmation email (Resend) was
+confirmed delivered for a real send and confirmed to fail gracefully (order still marks `paid`)
+when Resend's sandbox restrictions block the recipient.
+
+One account-specific Stripe quirk hit during setup: this account has "Managed Payments" (Stripe
+Tax) on by default, which requires a product tax code per line item unless disabled. Since VAT is
+already computed server-side per business-rules.md §1 and baked into each line's `unit_amount`,
+the session is created with `managed_payments: { enabled: false }` rather than adding tax codes —
+see the comment in `lib/orders/checkout-actions.ts`.
+
+No Stripe CLI or public tunnel is available in this environment, so local webhook testing signs
+simulated events by hand with a self-chosen `STRIPE_WEBHOOK_SECRET` (`.env.local`) rather than
+Stripe's real signing secret — replace it with the real one from Stripe Dashboard → Developers →
+Webhooks once a production/staging endpoint exists.
 
 Read [`docs/architecture.md`](docs/architecture.md) first.
 
@@ -47,8 +72,9 @@ PostgREST "computed field" function in `0013` — see `docs/security.md` §7. Tw
 deliberately accepted (§8 there): `citext` living in the `public` schema, and that computed field
 being directly RPC-callable (required for it to work as a computed field at all).
 
-`SUPABASE_SERVICE_ROLE_KEY` is not yet in `.env.local` — Supabase's MCP integration doesn't expose
-that secret; grab it from the project's API settings when Phase 3 (Stripe webhook) needs it.
+`SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, and `RESEND_API_KEY` are all in `.env.local`
+(Supabase's MCP integration can't expose the service-role secret itself; the user supplied it and
+the Stripe/Resend keys from their own dashboards).
 
 ## Design continuity with Eco Cleaning Technologies branding
 
@@ -79,5 +105,5 @@ deleted.
 
 ## Next step
 
-Phase 3 (Days 8–11): customer addresses, Stripe Checkout, order creation, webhook-driven payment
-status, order confirmation email. See `docs/implementation-plan.md`.
+Phase 4 (Days 12–15): admin dashboard — product management, inventory, orders, customers,
+categories. See `docs/implementation-plan.md`.

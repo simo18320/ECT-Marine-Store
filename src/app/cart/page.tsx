@@ -75,14 +75,12 @@ export default function CartPage() {
                   <dd>{formatCurrency(grandTotal)}</dd>
                 </div>
               </dl>
-              <button
-                type="button"
-                disabled
-                title="Checkout ships in Phase 3 (Stripe integration)"
-                className="mt-5 w-full cursor-not-allowed rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground opacity-50"
+              <Link
+                href="/checkout"
+                className="mt-5 block w-full rounded-md bg-primary px-4 py-2.5 text-center text-sm font-medium text-primary-foreground hover:opacity-90"
               >
-                Checkout (coming soon)
-              </button>
+                Checkout
+              </Link>
             </aside>
           </div>
         )}

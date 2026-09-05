@@ -63,8 +63,23 @@ export default async function AccountPage() {
           </dd>
         </dl>
 
-        <div className="mt-10 rounded-md border border-dashed border-border p-4 text-sm text-muted-foreground">
-          Orders, addresses, My Yacht and maintenance history land here in later phases (see{" "}
+        <div className="mt-10 flex flex-wrap gap-3">
+          <Link
+            href="/account/addresses"
+            className="rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-secondary"
+          >
+            Addresses
+          </Link>
+          <Link
+            href="/account/orders"
+            className="rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-secondary"
+          >
+            Orders
+          </Link>
+        </div>
+
+        <div className="mt-6 rounded-md border border-dashed border-border p-4 text-sm text-muted-foreground">
+          My Yacht and maintenance history land here in a later phase (see{" "}
           <code>docs/implementation-plan.md</code>).
         </div>
       </main>
