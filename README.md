@@ -113,18 +113,32 @@ implement procurement.md's flywheel from "flag" through to a purchase order:
   source). The database's own `supplier_orders_approval_required` check constraint is a second,
   independent enforcement of the same "no PO without an approver" rule.
 
-Verified with a live fixture directly against the RLS-protected schema as an `ect_admin` session
-(two suppliers — one `discovered`, one `qualified` — an RFQ, and two quotes): confirmed anon/
-non-staff read zero suppliers while the admin session read both; confirmed the discovered
-supplier's quote actually **out-scored** the qualified one on price/lead-time alone (the concrete
-case the eligibility rule exists to catch) and that awarding it is rejected while the lower-scored
-qualified quote's award succeeds and produces the expected PO row; confirmed the DB check
-constraint independently rejects a non-draft PO with no approver even bypassing the app layer; and
-confirmed `computeLandedCost`'s complete/incomplete branches against real inserted rows. This
-substituted for a full browser click-through this session because Supabase Auth's password grant
-was returning `500 Database error querying schema` for this project throughout verification (health
-endpoint was up, no incident was posted on Supabase's status page, and profiles/RLS/extensions all
-checked out normal) — a click-through pass is still owed once that clears.
+Verified live end-to-end in the browser as a throwaway `ect_admin` account (two suppliers — one
+`discovered`, one `qualified` — an RFQ, and two quotes, all deleted after): created both suppliers
+through `/admin/suppliers/new`; flagged products on `/admin/procurement` matched the real dev
+sample data exactly (UV-C Sterilizer at 4/5, Legionella Sampling Kit at 0/20) and "Create RFQ"
+correctly prefilled product and `reorder_quantity`; sent the RFQ to both suppliers and confirmed
+the rendered draft text and `sent_at` timestamp; entered a cheaper/faster quote for the discovered
+supplier and a pricier/slower, deliberately incomplete one (no shipping) for the qualified supplier
+— the discovered quote correctly **out-scored** the qualified one (86 → 66 once both were in, vs.
+60.5) and showed `Best price`/`Best value`, while the qualified quote showed `incomplete — purchase
+price only` for its landed cost, exactly as `computeLandedCost` and `rankQuotes` predict; clicking
+"Award & create PO" on the top-scoring discovered quote was rejected (Next's error boundary caught
+the thrown guard error, and the database confirmed no `supplier_orders` row was created), while
+awarding the lower-scored qualified quote succeeded, moved the RFQ to `Awarded`, and produced the
+exact expected `supplier_orders`/`supplier_order_items` row (20 × €9.50 = €190, `landed_cost` null,
+`approved_by`/`approved_at` set to that admin).
+
+Getting there took one detour: Supabase Auth's password grant returned `500 Database error
+querying schema` for every throwaway account this phase, which first looked like a platform
+incident (health endpoint was up, nothing on Supabase's status page, profiles/RLS/extensions all
+checked out). It wasn't — [Supabase's own troubleshooting
+guide](https://supabase.com/docs/guides/troubleshooting/auth-error-500-database-error-querying-schema-eb6b44)
+confirms this exact error means `NULL` in `auth.users` columns GoTrue expects as `''`, and every
+prior phase's throwaway-user SQL insert (this one included) had only ever set
+`confirmation_token`/`recovery_token` to `''`, leaving `email_change`, `email_change_token_new`,
+etc. `NULL` by column default. Explicitly setting all of them to `''` on insert fixed it
+immediately — worth remembering for every throwaway account created in later phases too.
 
 ## Admin dashboard
 
@@ -222,6 +236,4 @@ deleted.
 ## Next step
 
 Phase 8 (Days 26–27): AI — retrieval layer, the customer-facing assistant, maintenance-explanation
-and yacht-aware answers, response allowlist checking. See `docs/implementation-plan.md`. A
-browser click-through of Phase 7's admin UI is also still owed once Supabase Auth's password-grant
-issue (see "Procurement" above) clears.
+and yacht-aware answers, response allowlist checking. See `docs/implementation-plan.md`.
