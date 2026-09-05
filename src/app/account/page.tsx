@@ -76,6 +76,14 @@ export default async function AccountPage() {
           >
             Orders
           </Link>
+          {profile && ["ect_operator", "ect_admin", "super_admin"].includes(profile.role) && (
+            <Link
+              href="/admin"
+              className="rounded-md border border-primary px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10"
+            >
+              Admin dashboard
+            </Link>
+          )}
         </div>
 
         <div className="mt-6 rounded-md border border-dashed border-border p-4 text-sm text-muted-foreground">

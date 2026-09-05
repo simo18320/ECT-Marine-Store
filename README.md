@@ -6,10 +6,11 @@ Equipment Register, a deterministic Maintenance Engine, and an AI Procurement/Re
 
 ## Status
 
-**Phase 3 (Days 8–11) done.** Phases 0–2 (architecture, Next.js scaffold, Supabase/Auth, catalogue/
-search/cart) are complete. Checkout — Stripe, real orders, webhook-driven payment status, order
-confirmation email — is live and was verified with a real Stripe test-mode payment. Phase 4
-(admin dashboard) is next.
+**Phase 4 (Days 12–15) done.** Phases 0–3 (architecture, Next.js scaffold, Supabase/Auth,
+catalogue/search/cart, Stripe checkout) are complete. The admin dashboard — products (+ images/
+docs), categories, inventory (movements + reorder points), orders (status override with audit
+logging), customers — is live at `/admin`, gated by the `ect_operator`/`ect_admin` role split that
+was already built into RLS back in Phase 1. Phase 5 (My Yacht) is next.
 
 - [`docs/`](docs/) — architecture, database, business rules, AI engine, procurement, logistics,
   security, and the 30-day implementation plan.
@@ -30,7 +31,29 @@ confirmation email — is live and was verified with a real Stripe test-mode pay
   (breadcrumb + subcategories + products, in-stock filter), `/products/[slug]` (full product page:
   specs, compatibility, bundle contents, recommendations, purchase panel), `/search` (Postgres
   full-text), `/cart` (client-side, localStorage-backed), `/checkout` (address selection + Stripe
-  Checkout redirect), `/account` (profile, addresses, orders), `/login`.
+  Checkout redirect), `/account` (profile, addresses, orders), `/login`, `/admin` (see below).
+
+## Admin dashboard
+
+`/admin` reuses the exact `is_ect_staff()`/`is_ect_admin()` RLS split built in Phase 1 — no new
+policies were needed. Admin pages call the regular session-aware Supabase client (`lib/supabase/
+server.ts`), not the service-role client: the signed-in staff member's own `profiles.role` is what
+RLS checks, so the database is the actual enforcement boundary, and `lib/admin/guard.ts`
+(`requireStaff`/`requireAdmin`) is the server-side route-guard layer on top (security.md §2).
+
+- **`ect_operator`+**: inventory (record movements, edit reorder points), orders (view all, status
+  override — every change writes an `audit_logs` row with before/after), customers (view + order
+  history).
+- **`ect_admin`+ only**: products (create/edit, images, documents — bundle *composition* isn't
+  editable here yet, only the bundle's own fields; component lines still need direct DB access)
+  and categories (create/edit/delete).
+
+Verified live with three throwaway staff/customer accounts (since deleted): product edits show up
+immediately on the storefront (added an image, confirmed it rendered on the public product page);
+an order status change produced the expected `audit_logs` row; and — the actual point of the
+operator/admin split — an `ect_operator` account could see the products list but not its Edit/New
+controls, and directly navigating to `/admin/products/new` as that operator redirected them away
+via the server guard rather than relying on the UI hiding the link.
 
 ## Checkout & payments
 
@@ -105,5 +128,5 @@ deleted.
 
 ## Next step
 
-Phase 4 (Days 12–15): admin dashboard — product management, inventory, orders, customers,
-categories. See `docs/implementation-plan.md`.
+Phase 5 (Days 16–19): My Yacht — yacht profile, equipment register, filter register, QR codes,
+replacement dates. See `docs/implementation-plan.md`.
