@@ -10,12 +10,23 @@ import {
   REPLACEMENT_STATUS_COLOR,
   REPLACEMENT_STATUS_LABEL,
 } from "@/lib/maintenance/rules";
+import { listServiceRequestsForYacht } from "@/lib/service-requests/queries";
+import { serviceTypeLabel } from "@/lib/service-requests/types";
+
+const SERVICE_REQUEST_STATUS_LABEL: Record<string, string> = {
+  new: "Requested",
+  scheduled: "Scheduled",
+  in_progress: "In progress",
+  completed: "Completed",
+  cancelled: "Cancelled",
+};
 
 export default async function YachtDashboardPage({ params }: { params: Promise<{ yachtId: string }> }) {
   const { yachtId } = await params;
   const result = await getYachtWithRegister(yachtId);
   if (!result) notFound();
   const { yacht, equipment, filters } = result;
+  const serviceRequests = await listServiceRequestsForYacht(yachtId);
 
   const deleteEquipmentForYacht = deleteEquipment.bind(null, yachtId);
   const deleteFilterForYacht = deleteFilter.bind(null, yachtId);
@@ -30,7 +41,7 @@ export default async function YachtDashboardPage({ params }: { params: Promise<{
 
         <div className="mt-4 flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-semibold">{yacht.name}</h1>
+            <h1 className="text-3xl font-medium">{yacht.name}</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {[yacht.yacht_type, yacht.length_m ? `${yacht.length_m}m` : null, yacht.build_year, yacht.flag]
                 .filter(Boolean)
@@ -136,6 +147,42 @@ export default async function YachtDashboardPage({ params }: { params: Promise<{
                   </li>
                 );
               })}
+            </ul>
+          )}
+        </section>
+
+        <section className="mt-10">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Water &amp; air analysis</h2>
+            <Link
+              href={`/my-yacht/${yachtId}/services/new`}
+              className="text-sm font-medium text-primary hover:underline"
+            >
+              + Book an analysis
+            </Link>
+          </div>
+
+          {serviceRequests.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No analysis booked yet. Request a water or air quality check whenever something
+              seems off, or on a routine schedule.
+            </p>
+          ) : (
+            <ul className="divide-y divide-border rounded-md border border-border">
+              {serviceRequests.map((request) => (
+                <li key={request.id} className="flex items-center justify-between px-4 py-3 text-sm">
+                  <div>
+                    <p className="font-medium">{serviceTypeLabel(request.service_type)}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {request.preferred_date ? `Requested for ${request.preferred_date}` : "No preferred date"}
+                      {request.notes ? ` · ${request.notes}` : ""}
+                    </p>
+                  </div>
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {SERVICE_REQUEST_STATUS_LABEL[request.status] ?? request.status}
+                  </span>
+                </li>
+              ))}
             </ul>
           )}
         </section>

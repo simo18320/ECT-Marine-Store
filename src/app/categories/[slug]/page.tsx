@@ -38,7 +38,7 @@ export default async function CategoryPage({
           ))}
         </nav>
 
-        <h1 className="text-2xl font-semibold">{category.name}</h1>
+        <h1 className="text-3xl font-medium">{category.name}</h1>
         {category.description && (
           <p className="mt-2 max-w-2xl text-muted-foreground">{category.description}</p>
         )}
@@ -49,7 +49,7 @@ export default async function CategoryPage({
               <Link
                 key={child.id}
                 href={`/categories/${child.slug}`}
-                className="rounded-lg border border-border bg-card p-5 text-center font-medium shadow-sm transition hover:border-primary hover:shadow-md"
+                className="rounded-2xl border border-border bg-card p-5 text-center font-medium shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-primary/60 hover:shadow-lg"
               >
                 {child.name}
               </Link>
@@ -60,7 +60,7 @@ export default async function CategoryPage({
         {products.length > 0 && (
           <>
             <div className="mt-10 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Products</h2>
+              <h2 className="text-xl font-medium">Products</h2>
               <Link
                 href={inStock === "1" ? `/categories/${slug}` : `/categories/${slug}?inStock=1`}
                 className="text-sm font-medium text-muted-foreground hover:text-foreground"

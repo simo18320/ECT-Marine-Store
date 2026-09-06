@@ -24,7 +24,7 @@ export default async function CheckoutSuccessPage({
       <ClearCartOnMount />
       {!order ? (
         <>
-          <h1 className="text-2xl font-semibold">Order not found</h1>
+          <h1 className="text-3xl font-medium">Order not found</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             We couldn&rsquo;t find that order. If you just paid, check{" "}
             <Link href="/account/orders" className="text-primary hover:underline">
@@ -35,14 +35,14 @@ export default async function CheckoutSuccessPage({
         </>
       ) : order.status === "paid" ? (
         <>
-          <h1 className="text-2xl font-semibold text-status-good">Payment confirmed</h1>
+          <h1 className="text-3xl font-medium text-status-good">Payment confirmed</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Order <strong>{order.order_number}</strong> — {formatCurrency(order.grand_total)}
           </p>
         </>
       ) : (
         <>
-          <h1 className="text-2xl font-semibold">Payment processing</h1>
+          <h1 className="text-3xl font-medium">Payment processing</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Order <strong>{order.order_number}</strong> is being confirmed. This page will update
             once Stripe confirms the payment — refresh in a moment, or check{" "}

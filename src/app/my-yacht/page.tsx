@@ -18,7 +18,7 @@ export default async function MyYachtPage() {
       <SiteHeader />
       <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-10">
         <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-semibold">My Yacht</h1>
+          <h1 className="text-3xl font-medium">My Yacht</h1>
           <Link
             href="/my-yacht/new"
             className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"

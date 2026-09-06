@@ -16,7 +16,7 @@ export default async function AddressesPage() {
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-16">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Addresses</h1>
+        <h1 className="text-3xl font-medium">Addresses</h1>
         <Link
           href="/account/addresses/new"
           className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"

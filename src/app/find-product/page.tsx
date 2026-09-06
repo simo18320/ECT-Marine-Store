@@ -18,7 +18,7 @@ export default async function FindProductPage({
     <>
       <SiteHeader />
       <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-10">
-        <h1 className="text-2xl font-semibold">Find the right product</h1>
+        <h1 className="text-3xl font-medium">Find the right product</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Tell us what you&rsquo;re trying to solve and we&rsquo;ll recommend compatible products
           — never a guess, only products with verified compatibility.

@@ -17,7 +17,7 @@ export default async function AssistantPage() {
     <>
       <SiteHeader />
       <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-10">
-        <h1 className="text-2xl font-semibold">Ask ECT</h1>
+        <h1 className="text-3xl font-medium">Ask ECT</h1>
         <p className="mt-1 mb-6 text-sm text-muted-foreground">
           A quick way to ask about products, compatibility, or your yacht&rsquo;s maintenance —
           grounded only in what ECT has on file, never a guess.

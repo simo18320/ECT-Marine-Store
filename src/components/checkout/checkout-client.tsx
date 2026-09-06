@@ -45,7 +45,7 @@ export function CheckoutClient({ addresses }: { addresses: Address[] }) {
           {addresses.map((address) => (
             <label
               key={address.id}
-              className="flex cursor-pointer items-start gap-3 rounded-md border border-border p-3 text-sm has-[:checked]:border-primary"
+              className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-card p-4 text-sm transition has-[:checked]:border-primary has-[:checked]:shadow-sm"
             >
               <input
                 type="radio"
@@ -86,8 +86,8 @@ export function CheckoutClient({ addresses }: { addresses: Address[] }) {
         </ul>
       </div>
 
-      <aside className="h-fit rounded-md border border-border p-5">
-        <h2 className="mb-4 text-sm font-semibold">Order summary</h2>
+      <aside className="h-fit rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Order summary</h2>
         <dl className="space-y-2 text-sm">
           <div className="flex justify-between">
             <dt className="text-muted-foreground">Subtotal</dt>
@@ -97,9 +97,9 @@ export function CheckoutClient({ addresses }: { addresses: Address[] }) {
             <dt className="text-muted-foreground">VAT</dt>
             <dd>{formatCurrency(vatTotal)}</dd>
           </div>
-          <div className="flex justify-between border-t border-border pt-2 font-semibold">
-            <dt>Total</dt>
-            <dd>{formatCurrency(grandTotal)}</dd>
+          <div className="flex justify-between border-t border-border pt-2">
+            <dt className="font-medium">Total</dt>
+            <dd className="font-heading text-lg font-medium">{formatCurrency(grandTotal)}</dd>
           </div>
         </dl>
 
@@ -109,7 +109,7 @@ export function CheckoutClient({ addresses }: { addresses: Address[] }) {
           type="button"
           onClick={handleCheckout}
           disabled={isPending || !addressId}
-          className="mt-5 w-full rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground disabled:opacity-50"
+          className="mt-5 w-full rounded-full bg-primary px-4 py-3 text-sm font-medium text-primary-foreground shadow-sm transition hover:shadow-md disabled:opacity-50"
         >
           {isPending ? "Redirecting to Stripe…" : "Pay with Stripe"}
         </button>

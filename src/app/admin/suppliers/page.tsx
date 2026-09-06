@@ -18,7 +18,7 @@ export default async function AdminSuppliersPage() {
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Suppliers</h1>
+        <h1 className="text-3xl font-medium">Suppliers</h1>
         <Link href="/admin/suppliers/new" className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
           New supplier
         </Link>

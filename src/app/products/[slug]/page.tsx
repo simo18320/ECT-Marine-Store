@@ -34,41 +34,47 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </nav>
 
         <div className="grid gap-10 md:grid-cols-2">
-          <div className="flex aspect-square items-center justify-center rounded-lg bg-secondary text-sm text-muted-foreground">
+          <div className="flex aspect-square items-center justify-center overflow-hidden rounded-2xl bg-secondary">
             {product.images[0]?.url ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={product.images[0].url}
                 alt={product.images[0].alt_text ?? product.name}
-                className="h-full w-full rounded-lg object-cover"
+                className="h-full w-full object-cover"
               />
             ) : (
-              "No image available"
+              <svg viewBox="0 0 24 24" className="h-16 w-16 text-accent-foreground/30" fill="none" stroke="currentColor" strokeWidth="1.2">
+                <path
+                  d="M12 3c-3 4.5-6 8-6 11.5A6 6 0 0 0 12 20a6 6 0 0 0 6-5.5C18 11 15 7.5 12 3Z"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
             )}
           </div>
 
           <div>
-            <p className="text-sm text-muted-foreground">{product.sku}</p>
-            <h1 className="mt-1 text-2xl font-semibold">{product.name}</h1>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground/70">{product.sku}</p>
+            <h1 className="mt-1 text-3xl font-medium">{product.name}</h1>
             {product.short_description && (
               <p className="mt-2 text-muted-foreground">{product.short_description}</p>
             )}
 
             <div className="mt-6 flex items-baseline gap-3">
-              <span className="text-3xl font-semibold">{formatCurrency(product.selling_price)}</span>
+              <span className="font-heading text-3xl font-medium">{formatCurrency(product.selling_price)}</span>
               <span className="text-sm text-muted-foreground">excl. VAT ({product.vat_rate}%)</span>
             </div>
-            <p
+            <span
               className={
                 stockStatus === "out_of_stock"
-                  ? "mt-1 text-sm font-medium text-status-critical"
+                  ? "mt-2 inline-block rounded-full bg-status-critical/10 px-3 py-1 text-xs font-medium text-status-critical"
                   : stockStatus === "low_stock"
-                    ? "mt-1 text-sm font-medium text-status-warning"
-                    : "mt-1 text-sm font-medium text-status-good"
+                    ? "mt-2 inline-block rounded-full bg-status-warning/10 px-3 py-1 text-xs font-medium text-status-warning"
+                    : "mt-2 inline-block rounded-full bg-status-good/10 px-3 py-1 text-xs font-medium text-status-good"
               }
             >
               {STOCK_STATUS_LABEL[stockStatus]}
-            </p>
+            </span>
 
             <div className="mt-6">
               <PurchasePanel
@@ -84,7 +90,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             </div>
 
             {product.is_bundle && product.bundle_items.length > 0 && (
-              <div className="mt-8 rounded-md border border-border p-4">
+              <div className="mt-8 rounded-2xl border border-border bg-card p-4">
                 <h2 className="mb-2 text-sm font-semibold">What&rsquo;s in this kit</h2>
                 <ul className="space-y-1 text-sm text-muted-foreground">
                   {product.bundle_items.map(
@@ -120,8 +126,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
         {specs.length > 0 && (
           <div className="mt-12">
-            <h2 className="mb-3 text-lg font-semibold">Technical specifications</h2>
-            <dl className="grid grid-cols-1 gap-x-8 gap-y-2 rounded-md border border-border p-4 sm:grid-cols-2">
+            <h2 className="mb-3 text-xl font-medium">Technical specifications</h2>
+            <dl className="grid grid-cols-1 gap-x-8 gap-y-2 rounded-2xl border border-border bg-card p-5 sm:grid-cols-2">
               {specs.map(([key, val]) => (
                 <div key={key} className="flex justify-between border-b border-border/60 py-1 text-sm">
                   <dt className="capitalize text-muted-foreground">{key.replace(/_/g, " ")}</dt>
@@ -134,14 +140,14 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
         {product.description && (
           <div className="mt-10 max-w-3xl">
-            <h2 className="mb-2 text-lg font-semibold">Description</h2>
+            <h2 className="mb-2 text-xl font-medium">Description</h2>
             <p className="text-muted-foreground">{product.description}</p>
           </div>
         )}
 
         {product.recommendations.length > 0 && (
           <div className="mt-14">
-            <h2 className="mb-4 text-lg font-semibold">Recommended with this product</h2>
+            <h2 className="mb-4 text-xl font-medium">Recommended with this product</h2>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
               {product.recommendations.map(
                 (rec) =>

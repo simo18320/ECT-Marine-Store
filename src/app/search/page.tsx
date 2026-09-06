@@ -15,7 +15,7 @@ export default async function SearchPage({
     <>
       <SiteHeader />
       <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-10">
-        <h1 className="text-2xl font-semibold">
+        <h1 className="text-3xl font-medium">
           {query ? (
             <>
               Search results for <span className="text-muted-foreground">&ldquo;{query}&rdquo;</span>

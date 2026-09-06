@@ -7,7 +7,7 @@ export default async function NewSupplierPage() {
 
   return (
     <div className="max-w-lg">
-      <h1 className="mb-6 text-2xl font-semibold">New supplier</h1>
+      <h1 className="mb-6 text-3xl font-medium">New supplier</h1>
       <SupplierForm action={createSupplier} submitLabel="Create supplier" />
     </div>
   );

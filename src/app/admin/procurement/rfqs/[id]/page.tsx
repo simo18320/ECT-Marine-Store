@@ -34,7 +34,7 @@ export default async function RfqDetailPage({ params }: { params: Promise<{ id: 
 
   return (
     <div>
-      <h1 className="mb-1 text-2xl font-semibold">{rfq.product?.name}</h1>
+      <h1 className="mb-1 text-3xl font-medium">{rfq.product?.name}</h1>
       <p className="mb-6 text-sm text-muted-foreground">
         {rfq.product?.sku} · qty {rfq.quantity} · <span className="capitalize">{rfq.status}</span>
         {rfq.destination && <> · to {rfq.destination}</>}

@@ -13,7 +13,7 @@ export default async function AdminInventoryPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-semibold">Inventory</h1>
+      <h1 className="mb-6 text-3xl font-medium">Inventory</h1>
 
       <section className="mb-10 rounded-md border border-border p-4">
         <h2 className="mb-3 text-sm font-semibold">Record a movement</h2>

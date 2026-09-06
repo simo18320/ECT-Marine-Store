@@ -25,7 +25,7 @@ export default async function FilterQrPage({ params }: { params: Promise<{ token
       <main className="mx-auto w-full max-w-lg flex-1 px-6 py-10">
         {!filter ? (
           <>
-            <h1 className="text-2xl font-semibold">Not found</h1>
+            <h1 className="text-3xl font-medium">Not found</h1>
             <p className="mt-2 text-sm text-muted-foreground">
               This QR code doesn&rsquo;t match any filter you have access to.
             </p>
@@ -33,7 +33,7 @@ export default async function FilterQrPage({ params }: { params: Promise<{ token
         ) : (
           <>
             <p className="text-sm text-muted-foreground">{filter.yacht?.name}</p>
-            <h1 className="text-2xl font-semibold">{filter.product?.name ?? filter.filter_type ?? "Filter"}</h1>
+            <h1 className="text-3xl font-medium">{filter.product?.name ?? filter.filter_type ?? "Filter"}</h1>
             <p className="mt-1 text-sm text-muted-foreground">{filter.product?.sku}</p>
 
             {(() => {

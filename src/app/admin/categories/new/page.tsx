@@ -9,7 +9,7 @@ export default async function NewCategoryPage() {
 
   return (
     <div className="max-w-lg">
-      <h1 className="mb-6 text-2xl font-semibold">New category</h1>
+      <h1 className="mb-6 text-3xl font-medium">New category</h1>
       <CategoryForm action={createCategory} categories={categories} submitLabel="Create category" />
     </div>
   );

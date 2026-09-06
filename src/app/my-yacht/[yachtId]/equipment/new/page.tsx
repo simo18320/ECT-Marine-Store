@@ -12,7 +12,7 @@ export default async function NewEquipmentPage({ params }: { params: Promise<{ y
     <>
       <SiteHeader />
       <main className="mx-auto w-full max-w-lg flex-1 px-6 py-10">
-        <h1 className="mb-6 text-2xl font-semibold">Add equipment</h1>
+        <h1 className="mb-6 text-3xl font-medium">Add equipment</h1>
         <EquipmentForm action={createForYacht} equipmentTypes={equipmentTypes} submitLabel="Add equipment" />
       </main>
     </>

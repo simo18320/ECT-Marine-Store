@@ -27,7 +27,7 @@ export default async function OrdersPage() {
 
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-16">
-      <h1 className="mb-6 text-2xl font-semibold">Orders</h1>
+      <h1 className="mb-6 text-3xl font-medium">Orders</h1>
 
       {!orders || orders.length === 0 ? (
         <p className="text-sm text-muted-foreground">

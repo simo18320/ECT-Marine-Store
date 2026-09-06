@@ -21,7 +21,7 @@ export default async function SupplierDetailPage({ params }: { params: Promise<{
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-semibold">{supplier.name}</h1>
+      <h1 className="mb-6 text-3xl font-medium">{supplier.name}</h1>
 
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
         <div className="max-w-lg">

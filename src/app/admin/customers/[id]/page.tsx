@@ -17,7 +17,7 @@ export default async function AdminCustomerDetailPage({ params }: { params: Prom
         ← All customers
       </Link>
 
-      <h1 className="mt-4 text-2xl font-semibold">{profile.full_name ?? profile.email}</h1>
+      <h1 className="mt-4 text-3xl font-medium">{profile.full_name ?? profile.email}</h1>
       <dl className="mt-4 grid grid-cols-[8rem_1fr] gap-y-2 text-sm">
         <dt className="text-muted-foreground">Email</dt>
         <dd>{profile.email}</dd>

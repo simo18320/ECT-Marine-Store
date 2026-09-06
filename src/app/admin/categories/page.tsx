@@ -11,7 +11,7 @@ export default async function AdminCategoriesPage() {
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Categories</h1>
+        <h1 className="text-3xl font-medium">Categories</h1>
         {canEdit && (
           <Link
             href="/admin/categories/new"

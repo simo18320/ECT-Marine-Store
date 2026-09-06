@@ -86,6 +86,10 @@ export async function toggleProductActive(formData: FormData) {
   revalidatePath("/admin/products");
 }
 
+const PRODUCT_IMAGES_BUCKET = "product-images";
+
+// For a manufacturer photo that's already hosted somewhere (e.g. a supplier's own CDN) —
+// uploadProductImage below is for a photo staff have as a local file.
 export async function addProductImage(productId: string, formData: FormData) {
   await requireAdmin();
   const supabase = await createClient();
@@ -96,12 +100,46 @@ export async function addProductImage(productId: string, formData: FormData) {
   revalidatePath(`/admin/products/${productId}/edit`);
 }
 
+export async function uploadProductImage(productId: string, formData: FormData) {
+  await requireAdmin();
+  const supabase = await createClient();
+
+  const file = formData.get("file") as File;
+  if (!file || file.size === 0) throw new Error("Choose an image file to upload.");
+
+  const extension = file.name.includes(".") ? file.name.split(".").pop() : "jpg";
+  const path = `${productId}/${crypto.randomUUID()}.${extension}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from(PRODUCT_IMAGES_BUCKET)
+    .upload(path, file, { contentType: file.type });
+  if (uploadError) throw new Error(uploadError.message);
+
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from(PRODUCT_IMAGES_BUCKET).getPublicUrl(path);
+  const altText = (formData.get("alt_text") as string) || null;
+
+  await supabase.from("product_images").insert({ product_id: productId, url: publicUrl, alt_text: altText });
+  revalidatePath(`/admin/products/${productId}/edit`);
+}
+
 export async function deleteProductImage(productId: string, formData: FormData) {
   await requireAdmin();
   const supabase = await createClient();
   const imageId = formData.get("id") as string;
 
+  const { data: image } = await supabase.from("product_images").select("url").eq("id", imageId).single();
+
   await supabase.from("product_images").delete().eq("id", imageId);
+
+  // Only ever remove the underlying file for an image we uploaded ourselves — an externally
+  // hosted URL (added via addProductImage) points at storage we don't own.
+  if (image?.url.includes(`/storage/v1/object/public/${PRODUCT_IMAGES_BUCKET}/`)) {
+    const path = image.url.split(`/storage/v1/object/public/${PRODUCT_IMAGES_BUCKET}/`)[1];
+    if (path) await supabase.storage.from(PRODUCT_IMAGES_BUCKET).remove([path]);
+  }
+
   revalidatePath(`/admin/products/${productId}/edit`);
 }
 

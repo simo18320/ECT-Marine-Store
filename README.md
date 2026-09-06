@@ -6,22 +6,22 @@ Equipment Register, a deterministic Maintenance Engine, and an AI Procurement/Re
 
 ## Status
 
-**Phase 9 (Days 28–29) done.** Phases 0–8 (architecture, Next.js scaffold, Supabase/Auth,
-catalogue/search/cart, Stripe checkout, admin dashboard, My Yacht, recommendation engine,
-procurement, AI assistant) are complete. Phase 9 added the automated tests the master spec's §45
-checklist calls for — 74 unit tests plus a real, network-backed integration suite (webhook
-idempotency, RLS cross-tenant isolation) — and a manual mobile pass that found and fixed two real
-bugs: no way to reach `/find-product`/`/assistant`/`/my-yacht` from the header on a phone, and the
-admin nav overflowing the page body instead of wrapping. See "Testing" below. Phase 10 (launch) is
-next.
+**All 10 master-spec phases (Days 0–30) are complete and the store is live** at
+`ect-marine-store.vercel.app` (Stripe in test mode, per an explicit soft-launch decision — no real
+payments yet). Post-launch, three more pieces were added at the client's request: real product
+photo uploads (`/admin/products/[id]/edit`, replacing URL-paste-only), a water/air analysis
+booking flow (`/my-yacht/[yachtId]` → `/admin/service-requests`), and an "elegant yacht" visual
+pass across the storefront (a serif display font, refined cards/spacing/hover states — brand
+colors untouched, per the constraint below). See "Product photos", "Water & air analysis", and
+"Visual design" below.
 
 - [`docs/`](docs/) — architecture, database, business rules, AI engine, procurement, logistics,
   security, and the 30-day implementation plan.
-- [`database/migrations/`](database/migrations/) — the Supabase migrations (`0001`–`0015`)
+- [`database/migrations/`](database/migrations/) — the Supabase migrations (`0001`–`0016`)
   implementing the MVP schema from `docs/database.md`, applied to the live project
-  (`pwchzixxritrieedwuqz`, region `eu-west-1`). `0010`–`0015` are post-Phase-0 additions (security
+  (`pwchzixxritrieedwuqz`, region `eu-west-1`). `0010`–`0016` are post-Phase-0 additions (security
   hardening, full-text search, public stock-status exposure, supplier scoring, landed-cost
-  columns) — see `docs/database.md`'s intro for what each does.
+  columns, the product-images storage bucket) — see `docs/database.md`'s intro for what each does.
 - [`database/schema.sql`](database/schema.sql) — a consolidated, read-only concatenation of
   `0001`–`0009` for reviewing the original schema in one file (predates `0010`–`0013`).
 - [`database/seed.sql`](database/seed.sql) — the MVP category tree and equipment-type vocabulary,
@@ -63,6 +63,43 @@ added a Filter Housing installed 40 days ago with a 30-day interval (correctly s
 90-day interval (correctly showed **OK**), then actually navigated to both generated QR URLs
 (reading the real token out of the database, simulating a scan) and confirmed each resolved to the
 right record with the right computed status and due date.
+
+## Water &amp; air analysis bookings
+
+`/my-yacht/[yachtId]/services/new` lets a customer request a water or air quality analysis for a
+specific yacht — `service_type` (`water_analysis`/`air_analysis`), an optional preferred date, and
+notes for the technician. No new schema was needed: `service_requests` (with its
+`service_request_status` enum and yacht-member/staff RLS policy) has existed since Phase 0's
+original migrations but was completely unused in application code until now — the yacht dashboard
+even had a standing placeholder ("Maintenance history and service requests land here in a later
+phase"). `/admin/service-requests` is the staff side: every request across every yacht, with a
+status dropdown (`new → scheduled → in_progress → completed`/`cancelled`).
+
+Verified live end-to-end with a throwaway customer + yacht (deleted after): booked a water
+analysis with a note, confirmed it appeared on the yacht dashboard with status "Requested,"
+confirmed the exact row in `service_requests`, then — as a separate throwaway `ect_admin` account
+— confirmed it appeared on `/admin/service-requests` and that changing its status to "Scheduled"
+persisted correctly.
+
+## Product photos
+
+`/admin/products/[id]/edit` now has a real file-upload widget (`lib/admin/product-actions.ts`'s
+`uploadProductImage`) instead of requiring an already-hosted image URL — it uploads to a new
+public Supabase Storage bucket (`product-images`, migration `0016`) and inserts the resulting
+public URL into `product_images` exactly like the existing URL-paste flow, which is kept as a
+secondary "or link an externally hosted image" option (e.g. a manufacturer's own CDN) rather than
+removed. Deleting an image now also removes the underlying file from storage when it's one we
+uploaded (never for an externally-linked URL, which points at storage this app doesn't own). RLS
+on the bucket mirrors every other staff-managed table: public read (product photos are meant to be
+seen), staff-only write.
+
+The remote browser environment used for this session's verification can't drive a native OS file
+picker, so the actual `<input type="file">` interaction wasn't clicked through — instead, the
+underlying mechanism was verified directly against the real bucket, exactly like the storage
+equivalent of the Phase 9 RLS tests: an authenticated staff session's insert into
+`storage.objects` for this bucket succeeds, an authenticated non-staff customer's identical insert
+is rejected by RLS, and an anonymous read of the bucket succeeds. Test object deleted after via the
+Storage REST API (`storage.objects` blocks direct SQL `DELETE` by design).
 
 ## Recommendation engine
 
@@ -299,13 +336,50 @@ being directly RPC-callable (required for it to work as a computed field at all)
 (Supabase's MCP integration can't expose the service-role secret itself; the user supplied it and
 the Stripe/Resend keys from their own dashboards).
 
+## Visual design ("elegant yacht" pass)
+
+Requested post-launch: a more elegant, "luxury yacht" feel across the storefront — explicitly
+**without** touching the brand's OKLCH color tokens (see below), so this was entirely typography,
+spacing, and interaction polish within the existing palette:
+
+- **A serif display font** (Fraunces, `next/font/google`, self-hosted) is applied to every `h1`,
+  `h2`, and `h3` site-wide via a single rule in `globals.css` — not per-page — so it landed on
+  every page (including admin) from one change rather than dozens of edits. Body text stays on the
+  existing Carlito/Calibri.
+- **Cards** (product cards, category tiles, order/cart summaries) moved from `rounded-lg`/`rounded-md`
+  with a flat border to `rounded-2xl`/`rounded-xl` with a soft shadow, a subtle hover lift
+  (`hover:-translate-y-0.5`), and a stronger shadow on hover — applied to `ProductCard`, the
+  homepage/category subcategory tiles, and the cart/checkout order-summary panels.
+- **Primary CTAs** (checkout, "Add address," homepage hero buttons) moved from square `rounded-md`
+  buttons to full pill (`rounded-full`) buttons with a shadow that lifts on hover.
+- **Stock-status labels** moved from plain colored text to soft colored pill badges
+  (`bg-status-good/10` etc.) on both the product card and product detail page.
+- **The "no image" placeholder** is now a simple line-art droplet icon instead of the text "No
+  image" / "No image available" — a small detail, but it stops the empty state from reading as
+  broken while real product photos are added via the new upload feature.
+- **The homepage** got a real hero treatment (a subtle radial gradient using the existing
+  `--color-secondary`/`--color-background` tokens, an italicized serif accent on part of the
+  headline, two pill CTAs) and simple line-icon category tiles (droplet/wind/sparkle/wrench) in
+  place of plain text tiles; the footer was rewritten from a single placeholder line that still
+  said "(Phase 2, in development)" into a real footer with company name and quick links.
+
+Verified live in the browser across the homepage, a category page, a product detail page, the
+cart, and My Yacht — including a before/after check that `getComputedStyle(h1).fontFamily`
+actually resolves to Fraunces (confirming the global CSS rule took effect, not just that the class
+name looked right). All 8 dev-sample products were found already deactivated in the live database
+partway through this work (presumably the client hiding fabricated seed data from real customers
+post-launch, not something this session did) — verification of the product card/detail styling
+briefly reactivated one product, screenshotted it, and set it back to inactive immediately after.
+
 ## Design continuity with Eco Cleaning Technologies branding
 
 This store must read as the same company as ECT's other apps, not a separate brand:
 
 - **Color tokens** — the OKLCH marine-navy/brass palette in `src/app/globals.css` is copied
   verbatim from the sibling `yacht-environmental-dashboard` (Eco Air Sense) app, along with its
-  `shadcn` `components.json` (`radix-nova` style).
+  `shadcn` `components.json` (`radix-nova` style). The post-launch "elegant yacht" visual pass
+  (see below) deliberately left every one of these tokens untouched — it's a serif heading font,
+  spacing, and shadows layered on the same palette, not a new one.
 - **Logo** — `public/images/logo-wordmark.png` / `logo-badge.png` (+ `-white` variants) are the
   real Eco Cleaning Technologies corporate marks ("Consulting and Marine Services" / "Marine and
   Aviation"). These were **not** found in the Eco Air Sense app (its `public/logo.png` is that
@@ -328,5 +402,7 @@ deleted.
 
 ## Next step
 
-Phase 10 (Day 30): soft launch to selected ECT customers, per `docs/implementation-plan.md` and
-§44/§56 of the master spec.
+The 30-day plan is complete and the store is live. Post-launch: add real product photos through
+the new upload feature (currently every dev-sample product is inactive with no real photos yet),
+verify the `ecocleaningtechnologies.com` Resend domain to move order emails off the sandbox
+sender, and decide when (if ever) to flip Stripe from test to live mode for real payments.

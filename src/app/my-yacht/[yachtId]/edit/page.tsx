@@ -15,7 +15,7 @@ export default async function EditYachtPage({ params }: { params: Promise<{ yach
     <>
       <SiteHeader />
       <main className="mx-auto w-full max-w-lg flex-1 px-6 py-10">
-        <h1 className="mb-6 text-2xl font-semibold">Edit {yacht.name}</h1>
+        <h1 className="mb-6 text-3xl font-medium">Edit {yacht.name}</h1>
         <YachtForm action={updateWithId} defaultValues={yacht} submitLabel="Save changes" />
       </main>
     </>

@@ -12,7 +12,7 @@ export default async function EditAddressPage({ params }: { params: Promise<{ id
 
   return (
     <main className="mx-auto w-full max-w-lg flex-1 px-6 py-16">
-      <h1 className="mb-6 text-2xl font-semibold">Edit address</h1>
+      <h1 className="mb-6 text-3xl font-medium">Edit address</h1>
       <AddressForm action={updateWithId} defaultValues={address} submitLabel="Save changes" />
     </main>
   );

@@ -42,7 +42,7 @@ export default async function OrderDetailPage({
       </Link>
 
       <div className="mt-4 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">{order.order_number}</h1>
+        <h1 className="text-3xl font-medium">{order.order_number}</h1>
         <span className="text-sm font-medium">{STATUS_LABEL[order.status] ?? order.status}</span>
       </div>
       <p className="mt-1 text-sm text-muted-foreground">

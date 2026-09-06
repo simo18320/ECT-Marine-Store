@@ -25,7 +25,7 @@ export default async function EquipmentQrPage({ params }: { params: Promise<{ to
       <main className="mx-auto w-full max-w-lg flex-1 px-6 py-10">
         {!equipment ? (
           <>
-            <h1 className="text-2xl font-semibold">Not found</h1>
+            <h1 className="text-3xl font-medium">Not found</h1>
             <p className="mt-2 text-sm text-muted-foreground">
               This QR code doesn&rsquo;t match any equipment you have access to.
             </p>
@@ -33,7 +33,7 @@ export default async function EquipmentQrPage({ params }: { params: Promise<{ to
         ) : (
           <>
             <p className="text-sm text-muted-foreground">{equipment.yacht?.name}</p>
-            <h1 className="text-2xl font-semibold">{equipment.equipment_type?.name ?? "Equipment"}</h1>
+            <h1 className="text-3xl font-medium">{equipment.equipment_type?.name ?? "Equipment"}</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {equipment.manufacturer} {equipment.model}
             </p>

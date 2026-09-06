@@ -39,7 +39,7 @@ export default async function AccountPage() {
       </header>
 
       <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-16">
-        <h1 className="text-2xl font-semibold">My Account</h1>
+        <h1 className="text-3xl font-medium">My Account</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Signed in as {profile?.email ?? user.email}.
         </p>

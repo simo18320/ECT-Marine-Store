@@ -26,7 +26,7 @@ export default async function AdminOrderDetailPage({
       </Link>
 
       <div className="mt-4 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">{order.order_number}</h1>
+        <h1 className="text-3xl font-medium">{order.order_number}</h1>
         <form action={updateStatus} className="flex items-center gap-2">
           <select name="status" defaultValue={order.status} className="rounded-md border border-input bg-card px-3 py-1.5 text-sm capitalize">
             {STATUSES.map((s) => (

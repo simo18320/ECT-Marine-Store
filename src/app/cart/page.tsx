@@ -12,10 +12,10 @@ export default function CartPage() {
     <>
       <SiteHeader />
       <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-10">
-        <h1 className="text-2xl font-semibold">Your cart</h1>
+        <h1 className="text-3xl font-medium">Your cart</h1>
 
         {items.length === 0 ? (
-          <div className="mt-8 rounded-md border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+          <div className="mt-8 rounded-2xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
             Your cart is empty.{" "}
             <Link href="/" className="font-medium text-primary hover:underline">
               Continue shopping
@@ -59,8 +59,8 @@ export default function CartPage() {
               ))}
             </ul>
 
-            <aside className="h-fit rounded-md border border-border p-5">
-              <h2 className="mb-4 text-sm font-semibold">Order summary</h2>
+            <aside className="h-fit rounded-2xl border border-border bg-card p-6 shadow-sm">
+              <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Order summary</h2>
               <dl className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Subtotal</dt>
@@ -70,14 +70,14 @@ export default function CartPage() {
                   <dt className="text-muted-foreground">VAT</dt>
                   <dd>{formatCurrency(vatTotal)}</dd>
                 </div>
-                <div className="flex justify-between border-t border-border pt-2 font-semibold">
-                  <dt>Total</dt>
-                  <dd>{formatCurrency(grandTotal)}</dd>
+                <div className="flex justify-between border-t border-border pt-2">
+                  <dt className="font-medium">Total</dt>
+                  <dd className="font-heading text-lg font-medium">{formatCurrency(grandTotal)}</dd>
                 </div>
               </dl>
               <Link
                 href="/checkout"
-                className="mt-5 block w-full rounded-md bg-primary px-4 py-2.5 text-center text-sm font-medium text-primary-foreground hover:opacity-90"
+                className="mt-5 block w-full rounded-full bg-primary px-4 py-3 text-center text-sm font-medium text-primary-foreground shadow-sm transition hover:shadow-md"
               >
                 Checkout
               </Link>

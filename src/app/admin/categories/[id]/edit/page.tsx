@@ -16,7 +16,7 @@ export default async function EditCategoryPage({ params }: { params: Promise<{ i
 
   return (
     <div className="max-w-lg">
-      <h1 className="mb-6 text-2xl font-semibold">Edit category</h1>
+      <h1 className="mb-6 text-3xl font-medium">Edit category</h1>
       <CategoryForm action={updateWithId} defaultValues={category} categories={categories} submitLabel="Save changes" />
     </div>
   );

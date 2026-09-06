@@ -1,11 +1,21 @@
 import type { Metadata } from "next";
-import { Carlito, Geist_Mono } from "next/font/google";
+import { Carlito, Fraunces, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
 const bodyFont = Carlito({
   variable: "--font-calibri",
   subsets: ["latin"],
   weight: ["400", "700"],
+});
+
+// A refined serif for headings only (body text stays on Carlito/Calibri) — the "elegant yacht"
+// look the client asked for, applied globally in globals.css rather than per-page so it lands on
+// every page without touching each one.
+const headingFont = Fraunces({
+  variable: "--font-fraunces",
+  subsets: ["latin"],
+  weight: ["500", "600"],
+  style: ["normal", "italic"],
 });
 
 const geistMono = Geist_Mono({
@@ -23,7 +33,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${bodyFont.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${bodyFont.variable} ${headingFont.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

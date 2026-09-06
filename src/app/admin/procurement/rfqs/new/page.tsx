@@ -14,7 +14,7 @@ export default async function NewRfqPage({
 
   return (
     <div className="max-w-xl">
-      <h1 className="mb-6 text-2xl font-semibold">New RFQ</h1>
+      <h1 className="mb-6 text-3xl font-medium">New RFQ</h1>
       <form action={createRfq} className="flex flex-col gap-4">
         <label className="flex flex-col gap-1 text-sm">
           Product
