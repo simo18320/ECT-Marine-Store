@@ -66,7 +66,11 @@ export async function startCheckout(
       cancel_url: `${appUrl}/cart`,
       metadata: { order_id: order.id, order_number: order.orderNumber },
     });
-  } catch {
+  } catch (err) {
+    // Logged server-side (never shown to the customer) so a real failure — bad API key,
+    // account restriction, a Stripe-side validation error — is actually diagnosable instead
+    // of only ever surfacing as this generic message.
+    console.error("Stripe checkout session creation failed:", err);
     // Don't leave an unpayable "pending" order stuck in the customer's order history.
     await deleteOrder(order.id);
     return { error: "Could not start payment. Please try again." };
