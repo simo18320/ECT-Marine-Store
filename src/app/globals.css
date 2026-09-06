@@ -52,51 +52,14 @@
 }
 
 /*
- * These tokens are intentionally identical to
- * yacht-environmental-dashboard/src/app/globals.css (the Eco Air Sense app) —
- * ECT Marine Store and Eco Air Sense are sibling products and must read as
- * one company. Do not diverge this palette without updating both apps.
+ * Marine/technical palette: navy background, muted brass accent, cool neutral grays.
+ * Was previously a light celeste background with these same navy/brass hues used only
+ * as accents; per owner request the navy is now the page background itself. Was also
+ * previously kept identical to yacht-environmental-dashboard/src/app/globals.css (the
+ * Eco Air Sense app) — that sibling app still uses the light variant, so update it too
+ * if the two should keep matching.
  */
 :root {
-  /* Marine/technical palette: deep navy primary, muted brass accent, cool neutral grays */
-  --background: oklch(0.93 0.035 245);
-  --foreground: oklch(0.22 0.03 255);
-  --card: oklch(0.99 0.008 240);
-  --card-foreground: oklch(0.22 0.03 255);
-  --popover: oklch(0.99 0.008 240);
-  --popover-foreground: oklch(0.22 0.03 255);
-  --primary: oklch(0.42 0.13 258);
-  --primary-foreground: oklch(0.98 0.005 240);
-  --secondary: oklch(0.89 0.035 245);
-  --secondary-foreground: oklch(0.3 0.09 258);
-  --muted: oklch(0.89 0.03 245);
-  --muted-foreground: oklch(0.48 0.04 255);
-  --accent: oklch(0.74 0.1 80);
-  --accent-foreground: oklch(0.22 0.04 80);
-  --destructive: oklch(0.577 0.19 25);
-  --border: oklch(0.86 0.025 245);
-  --input: oklch(0.86 0.025 245);
-  --ring: oklch(0.55 0.09 255);
-  --chart-1: oklch(0.5 0.14 255);
-  --chart-2: oklch(0.7 0.1 80);
-  --chart-3: oklch(0.6 0.14 150);
-  --chart-4: oklch(0.65 0.16 40);
-  --chart-5: oklch(0.55 0.18 20);
-  --radius: 0.5rem;
-  --sidebar: oklch(0.22 0.08 258);
-  --sidebar-foreground: oklch(0.92 0.015 245);
-  --sidebar-primary: oklch(0.74 0.1 80);
-  --sidebar-primary-foreground: oklch(0.18 0.03 255);
-  --sidebar-accent: oklch(0.3 0.09 258);
-  --sidebar-accent-foreground: oklch(0.97 0.008 240);
-  --sidebar-border: oklch(0.34 0.08 258);
-  --sidebar-ring: oklch(0.55 0.09 255);
-  --status-good: oklch(0.6 0.13 155);
-  --status-warning: oklch(0.72 0.14 75);
-  --status-critical: oklch(0.577 0.19 25);
-}
-
-.dark {
   --background: oklch(0.17 0.02 255);
   --foreground: oklch(0.94 0.006 240);
   --card: oklch(0.21 0.025 255);
@@ -120,6 +83,7 @@
   --chart-3: oklch(0.65 0.14 150);
   --chart-4: oklch(0.7 0.16 40);
   --chart-5: oklch(0.62 0.18 20);
+  --radius: 0.5rem;
   --sidebar: oklch(0.13 0.02 255);
   --sidebar-foreground: oklch(0.9 0.008 240);
   --sidebar-primary: oklch(0.74 0.1 80);

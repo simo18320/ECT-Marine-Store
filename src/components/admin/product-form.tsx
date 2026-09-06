@@ -14,15 +14,24 @@ export function ProductForm({ action, defaultValues, categories, brands, submitL
   return (
     <form action={action} className="flex flex-col gap-4">
       <div className="grid grid-cols-2 gap-4">
-        <label className="flex flex-col gap-1 text-sm">
-          SKU
-          <input
-            name="sku"
-            required
-            defaultValue={defaultValues?.sku ?? ""}
-            className="rounded-md border border-input bg-card px-3 py-2 font-mono"
-          />
-        </label>
+        {defaultValues ? (
+          <label className="flex flex-col gap-1 text-sm">
+            SKU
+            <input
+              name="sku"
+              required
+              defaultValue={defaultValues.sku}
+              className="rounded-md border border-input bg-card px-3 py-2 font-mono"
+            />
+          </label>
+        ) : (
+          <div className="flex flex-col gap-1 text-sm">
+            <span>SKU</span>
+            <p className="rounded-md border border-dashed border-border bg-secondary px-3 py-2 font-mono text-xs text-muted-foreground">
+              Assigned automatically on save
+            </p>
+          </div>
+        )}
         <label className="flex flex-col gap-1 text-sm">
           Slug
           <input

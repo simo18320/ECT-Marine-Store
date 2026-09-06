@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SiteHeader } from "@/components/nav/site-header";
+import { SiteFooter } from "@/components/nav/site-footer";
 import { getCategoryTree } from "@/lib/products/queries";
 
 // Simple line icons per top-level category, keyed by slug — no icon library needed for four
@@ -105,22 +106,7 @@ export default async function HomePage() {
         </section>
       </main>
 
-      <footer className="border-t border-border bg-card">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-6 py-10 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-          <p>Eco Cleaning Technologies Consulting Srl — ECT Marine Store</p>
-          <div className="flex flex-wrap gap-x-6 gap-y-2">
-            <Link href="/find-product" className="hover:text-foreground">
-              Find the right product
-            </Link>
-            <Link href="/assistant" className="hover:text-foreground">
-              Ask ECT
-            </Link>
-            <Link href="/my-yacht" className="hover:text-foreground">
-              My Yacht
-            </Link>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </>
   );
 }

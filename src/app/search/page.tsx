@@ -1,4 +1,5 @@
 import { SiteHeader } from "@/components/nav/site-header";
+import { SiteFooter } from "@/components/nav/site-footer";
 import { ProductCard } from "@/components/product/product-card";
 import { searchProducts } from "@/lib/products/queries";
 
@@ -45,6 +46,7 @@ export default async function SearchPage({
           </div>
         )}
       </main>
+      <SiteFooter />
     </>
   );
 }

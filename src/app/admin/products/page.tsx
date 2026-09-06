@@ -3,6 +3,7 @@ import { requireStaff } from "@/lib/admin/guard";
 import { listProductsAdmin } from "@/lib/admin/products";
 import { toggleProductActive } from "@/lib/admin/product-actions";
 import { formatCurrency } from "@/lib/utils";
+import { DeleteProductButton } from "@/components/admin/delete-product-button";
 
 export default async function AdminProductsPage() {
   const staff = await requireStaff();
@@ -65,6 +66,7 @@ export default async function AdminProductsPage() {
                         </button>
                       </form>
                     )}
+                    {canEdit && <DeleteProductButton productId={product.id} productName={product.name} />}
                   </div>
                 </td>
               </tr>

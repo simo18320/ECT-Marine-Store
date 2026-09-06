@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/nav/site-header";
+import { SiteFooter } from "@/components/nav/site-footer";
 import { ProductCard } from "@/components/product/product-card";
 import { PurchasePanel } from "@/components/product/purchase-panel";
 import { getProductBySlug } from "@/lib/products/queries";
 import { STOCK_STATUS_LABEL } from "@/lib/inventory/rules";
+import { getStoreSettings } from "@/lib/settings/queries";
 import { formatCurrency } from "@/lib/utils";
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -14,6 +16,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   const stockStatus = product.availability_status;
   const specs = Object.entries((product.technical_specs as Record<string, unknown>) ?? {});
+
+  const settings = stockStatus === "out_of_stock" ? await getStoreSettings() : null;
+  const stockLabel = settings?.restock_mode ? settings.restock_label : STOCK_STATUS_LABEL[stockStatus];
 
   return (
     <>
@@ -73,7 +78,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                     : "mt-2 inline-block rounded-full bg-status-good/10 px-3 py-1 text-xs font-medium text-status-good"
               }
             >
-              {STOCK_STATUS_LABEL[stockStatus]}
+              {stockLabel}
             </span>
 
             <div className="mt-6">
@@ -85,6 +90,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 unitPrice={product.selling_price}
                 vatRate={product.vat_rate}
                 stockStatus={stockStatus}
+                stockLabel={stockLabel}
                 requiresComplianceAck={product.requires_compliance_ack}
               />
             </div>
@@ -159,6 +165,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           </div>
         )}
       </main>
+      <SiteFooter />
     </>
   );
 }

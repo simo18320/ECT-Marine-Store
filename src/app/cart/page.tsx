@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { SiteHeader } from "@/components/nav/site-header";
+import { SiteFooter } from "@/components/nav/site-footer";
 import { useCart } from "@/lib/cart/cart-context";
 import { formatCurrency } from "@/lib/utils";
 
@@ -85,6 +86,7 @@ export default function CartPage() {
           </div>
         )}
       </main>
+      <SiteFooter />
     </>
   );
 }

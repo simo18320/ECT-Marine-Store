@@ -1755,6 +1755,27 @@ export type Database = {
           },
         ]
       }
+      store_settings: {
+        Row: {
+          id: boolean
+          restock_label: string
+          restock_mode: boolean
+          updated_at: string
+        }
+        Insert: {
+          id?: boolean
+          restock_label?: string
+          restock_mode?: boolean
+          updated_at?: string
+        }
+        Update: {
+          id?: boolean
+          restock_label?: string
+          restock_mode?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       supplier_order_items: {
         Row: {
           id: string

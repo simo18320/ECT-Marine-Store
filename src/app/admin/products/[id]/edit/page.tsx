@@ -3,9 +3,9 @@ import { requireAdmin } from "@/lib/admin/guard";
 import { getProductForEdit, listBrands, listCategoriesFlat } from "@/lib/admin/products";
 import {
   addProductDocument,
-  addProductImage,
   deleteProductDocument,
   deleteProductImage,
+  importProductImageFromUrl,
   updateProduct,
   uploadProductImage,
 } from "@/lib/admin/product-actions";
@@ -26,7 +26,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
 
   const updateWithId = updateProduct.bind(null, id);
   const uploadImageWithId = uploadProductImage.bind(null, id);
-  const addImageWithId = addProductImage.bind(null, id);
+  const importImageWithId = importProductImageFromUrl.bind(null, id);
   const deleteImageWithId = deleteProductImage.bind(null, id);
   const addDocWithId = addProductDocument.bind(null, id);
   const deleteDocWithId = deleteProductDocument.bind(null, id);
@@ -78,12 +78,18 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
         </form>
 
         <details className="text-sm text-muted-foreground">
-          <summary className="cursor-pointer">Or link an externally hosted image instead</summary>
-          <form action={addImageWithId} className="mt-2 flex gap-2">
+          <summary className="cursor-pointer">Or import from a supplier/manufacturer&rsquo;s URL</summary>
+          <p className="mt-2 text-xs">
+            Downloads the image and hosts it ourselves, rather than linking to their site directly
+            — check you&rsquo;re allowed to use the photo (most reseller agreements cover this, but
+            it&rsquo;s worth a quick check if you&rsquo;re not sure).
+          </p>
+          <form action={importImageWithId} className="mt-2 flex gap-2">
             <input
-              name="url"
+              name="source_url"
+              type="url"
               required
-              placeholder="Image URL"
+              placeholder="https://supplier-site.com/photo.jpg"
               className="flex-1 rounded-md border border-input bg-card px-3 py-2 text-sm"
             />
             <input
@@ -92,7 +98,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
               className="flex-1 rounded-md border border-input bg-card px-3 py-2 text-sm"
             />
             <button type="submit" className="rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-secondary">
-              Add
+              Import
             </button>
           </form>
         </details>

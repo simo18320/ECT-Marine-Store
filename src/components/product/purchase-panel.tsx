@@ -13,6 +13,7 @@ interface PurchasePanelProps {
   unitPrice: number;
   vatRate: number;
   stockStatus: StockStatus;
+  stockLabel: string;
   requiresComplianceAck: boolean;
 }
 
@@ -24,6 +25,7 @@ export function PurchasePanel({
   unitPrice,
   vatRate,
   stockStatus,
+  stockLabel,
   requiresComplianceAck,
 }: PurchasePanelProps) {
   const { addItem } = useCart();
@@ -76,7 +78,7 @@ export function PurchasePanel({
           onClick={handleAddToCart}
           className="flex-1 rounded-md bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {outOfStock ? "Out of stock" : justAdded ? "Added to cart" : "Add to cart"}
+          {outOfStock ? stockLabel : justAdded ? "Added to cart" : "Add to cart"}
         </button>
       </div>
 

@@ -1,10 +1,15 @@
 import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
 import { STOCK_STATUS_LABEL } from "@/lib/inventory/rules";
+import { getStoreSettings } from "@/lib/settings/queries";
 import type { ProductListItem } from "@/lib/products/queries";
 
-export function ProductCard({ product }: { product: ProductListItem }) {
+export async function ProductCard({ product }: { product: ProductListItem }) {
   const status = product.availability_status;
+  // Restock mode swaps the honest "Out of stock" for a launch-friendly message — the
+  // underlying stock status (and cart/checkout behaviour) is unaffected, only this label.
+  const settings = status === "out_of_stock" ? await getStoreSettings() : null;
+  const label = settings?.restock_mode ? settings.restock_label : STOCK_STATUS_LABEL[status];
 
   return (
     <Link
@@ -45,7 +50,7 @@ export function ProductCard({ product }: { product: ProductListItem }) {
                 : "rounded-full bg-status-good/10 px-2 py-0.5 text-xs font-medium text-status-good"
           }
         >
-          {STOCK_STATUS_LABEL[status]}
+          {label}
         </span>
       </div>
     </Link>

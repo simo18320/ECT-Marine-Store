@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/nav/site-header";
+import { SiteFooter } from "@/components/nav/site-footer";
 import { AssistantChat } from "@/components/assistant/chat";
 import { createClient } from "@/lib/supabase/server";
 import { getYachtsForUser } from "@/lib/yachts/queries";
@@ -24,6 +25,7 @@ export default async function AssistantPage() {
         </p>
         <AssistantChat yachts={yachts.map((y) => ({ id: y.id, name: y.name }))} />
       </main>
+      <SiteFooter />
     </>
   );
 }

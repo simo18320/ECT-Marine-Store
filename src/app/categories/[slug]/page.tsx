@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/nav/site-header";
+import { SiteFooter } from "@/components/nav/site-footer";
 import { ProductCard } from "@/components/product/product-card";
 import { getCategoryBySlug, getProductsByCategoryId } from "@/lib/products/queries";
 
@@ -82,6 +83,7 @@ export default async function CategoryPage({
           </p>
         )}
       </main>
+      <SiteFooter />
     </>
   );
 }

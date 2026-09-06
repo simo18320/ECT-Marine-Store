@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SiteHeader } from "@/components/nav/site-header";
+import { SiteFooter } from "@/components/nav/site-footer";
 import { ProductCard } from "@/components/product/product-card";
 import { PROBLEMS, getProblem } from "@/lib/recommendations/problems";
 import { getRecommendationsForProblem } from "@/lib/recommendations/engine";
@@ -30,6 +31,7 @@ export default async function FindProductPage({
           <ProblemResults problemId={problem.id} yachtId={yachtId} />
         )}
       </main>
+      <SiteFooter />
     </>
   );
 }
