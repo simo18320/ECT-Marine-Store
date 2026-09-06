@@ -1,9 +1,13 @@
+"use client";
+
+import { useActionState } from "react";
 import type { Database } from "@/types/database";
+import type { ProductFormState } from "@/lib/admin/product-actions";
 
 type Product = Database["public"]["Tables"]["products"]["Row"];
 
 interface ProductFormProps {
-  action: (formData: FormData) => void;
+  action: (prevState: ProductFormState, formData: FormData) => Promise<ProductFormState>;
   defaultValues?: Product | null;
   categories: { id: string; label: string }[];
   brands: { id: string; name: string }[];
@@ -11,8 +15,15 @@ interface ProductFormProps {
 }
 
 export function ProductForm({ action, defaultValues, categories, brands, submitLabel }: ProductFormProps) {
+  const [state, formAction, isPending] = useActionState(action, {});
+
   return (
-    <form action={action} className="flex flex-col gap-4">
+    <form action={formAction} className="flex flex-col gap-4">
+      {state.error && (
+        <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {state.error}
+        </p>
+      )}
       <div className="grid grid-cols-2 gap-4">
         {defaultValues ? (
           <label className="flex flex-col gap-1 text-sm">
@@ -213,9 +224,10 @@ export function ProductForm({ action, defaultValues, categories, brands, submitL
 
       <button
         type="submit"
-        className="mt-2 self-start rounded-md bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground"
+        disabled={isPending}
+        className="mt-2 self-start rounded-md bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {submitLabel}
+        {isPending ? "Saving…" : submitLabel}
       </button>
     </form>
   );

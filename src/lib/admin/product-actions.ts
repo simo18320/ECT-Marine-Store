@@ -50,6 +50,22 @@ function readProductForm(formData: FormData) {
   };
 }
 
+// Postgres' raw unique-violation text ("duplicate key value violates unique constraint
+// \"products_slug_key\"") isn't something an admin can act on — translate the two constraints
+// they can actually hit here into a message that tells them what to fix.
+function friendlyProductError(error: { code?: string; message: string } | null): string {
+  if (!error) return "Could not save product.";
+  if (error.code === "23505") {
+    if (error.message.includes("products_slug_key")) {
+      return "That slug is already used by another product — choose a different one.";
+    }
+    if (error.message.includes("products_sku_key")) {
+      return "That SKU is already used by another product — choose a different one.";
+    }
+  }
+  return error.message;
+}
+
 // Existing SKUs are short hand-written codes (e.g. "ECT-SED-10-5M") that encode category/spec
 // info an admin chose deliberately — auto-generation can't reproduce that, so instead it just
 // hands out the next sequential ECT-#### code, leaving the manual style available on edit if
@@ -67,7 +83,12 @@ async function generateNextSku(supabase: Awaited<ReturnType<typeof createClient>
   return `ECT-${String(nextNumber).padStart(4, "0")}`;
 }
 
-export async function createProduct(formData: FormData) {
+// The form uses useActionState so a bad slug/SKU shows inline instead of crashing the whole
+// page — a plain `<form action={fn}>` has no channel back to the client for a thrown error
+// short of Next's generic error boundary, which is a jarring way to report "pick another slug".
+export type ProductFormState = { error?: string };
+
+export async function createProduct(_prevState: ProductFormState, formData: FormData): Promise<ProductFormState> {
   await requireAdmin();
   const supabase = await createClient();
   const fields = readProductForm(formData);
@@ -75,19 +96,26 @@ export async function createProduct(formData: FormData) {
 
   const { data, error } = await supabase.from("products").insert({ ...fields, sku }).select("id").single();
   if (error || !data) {
-    throw new Error(error?.message ?? "Could not create product.");
+    return { error: friendlyProductError(error) };
   }
 
   revalidatePath("/admin/products");
   redirect(`/admin/products/${data.id}/edit`);
 }
 
-export async function updateProduct(id: string, formData: FormData) {
+export async function updateProduct(
+  id: string,
+  _prevState: ProductFormState,
+  formData: FormData,
+): Promise<ProductFormState> {
   await requireAdmin();
   const supabase = await createClient();
   const fields = readProductForm(formData);
 
-  await supabase.from("products").update(fields).eq("id", id);
+  const { error } = await supabase.from("products").update(fields).eq("id", id);
+  if (error) {
+    return { error: friendlyProductError(error) };
+  }
 
   revalidatePath("/admin/products");
   revalidatePath(`/admin/products/${id}/edit`);
