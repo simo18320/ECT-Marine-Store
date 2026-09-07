@@ -52,12 +52,20 @@ export const PRODUCT_LIST_SELECT = `
 
 export interface RawProductListRow extends Product {
   availability_status: string | null;
-  primary_image: Pick<ProductImage, "url" | "alt_text"> | null;
+  // PostgREST embeds a to-many relation (a product can have several images) as an array, even
+  // though only the first one is ever used here — that mismatch with the single-object type this
+  // used to declare meant a product's real photo never rendered on any listing (only on its own
+  // detail page, which queries product_images separately and indexes it correctly).
+  primary_image: Pick<ProductImage, "url" | "alt_text">[] | null;
 }
 
 export function toListItem(row: RawProductListRow): ProductListItem {
-  const { availability_status, ...rest } = row;
-  return { ...rest, availability_status: parseAvailabilityStatus(availability_status) };
+  const { availability_status, primary_image, ...rest } = row;
+  return {
+    ...rest,
+    availability_status: parseAvailabilityStatus(availability_status),
+    primary_image: primary_image?.[0] ?? null,
+  };
 }
 
 /** Full category tree, ordered by sort_order at every level. */
