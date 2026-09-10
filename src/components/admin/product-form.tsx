@@ -6,6 +6,35 @@ import type { ProductFormState } from "@/lib/admin/product-actions";
 
 type Product = Database["public"]["Tables"]["products"]["Row"];
 
+const SIZE_OPTIONS = ['10"', '20"', '2.5" x 10"', '4.5" x 10" (Big Blue)', '4.5" x 20" (Big Blue)', '5"'];
+const MICRON_OPTIONS = ["1", "5", "10", "20", "25", "50"];
+const USE_OPTIONS = [
+  "Sediment removal",
+  "Carbon / taste & odor",
+  "Bacteriostatic",
+  "RO pre/post-filtration",
+  "UV disinfection",
+  "HVAC / air filtration",
+  "Sanitization",
+  "Testing / sampling",
+];
+const FILTER_TYPE_OPTIONS = [
+  "Melt-blown polypropylene",
+  "String-wound polypropylene",
+  "Carbon block",
+  "Coconut carbon block",
+  "GAC (granular activated carbon)",
+  "Pleated",
+  "Ceramic",
+  "Ion exchange",
+];
+const DELIVERY_ESTIMATE_OPTIONS: { value: string; label: string }[] = [
+  { value: "", label: "— Not set (uses stock status) —" },
+  { value: "ships_immediately", label: "Ships immediately" },
+  { value: "ships_2_3_days", label: "Ships in 2–3 days" },
+  { value: "made_to_order", label: "Made to order (1–2 weeks)" },
+];
+
 interface ProductFormProps {
   action: (prevState: ProductFormState, formData: FormData) => Promise<ProductFormState>;
   defaultValues?: Product | null;
@@ -16,6 +45,7 @@ interface ProductFormProps {
 
 export function ProductForm({ action, defaultValues, categories, brands, submitLabel }: ProductFormProps) {
   const [state, formAction, isPending] = useActionState(action, {});
+  const specs = (defaultValues?.technical_specs as Record<string, unknown>) ?? {};
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
@@ -116,6 +146,73 @@ export function ProductForm({ action, defaultValues, categories, brands, submitL
         />
       </label>
 
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <label className="flex flex-col gap-1 text-sm">
+          Size
+          <select
+            name="spec_size"
+            defaultValue={typeof specs.size === "string" ? specs.size : ""}
+            className="rounded-md border border-input bg-card px-3 py-2"
+          >
+            <option value="">— None —</option>
+            {SIZE_OPTIONS.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          Micron rating
+          <select
+            name="spec_micron"
+            defaultValue={
+              typeof specs.micron_rating === "number" || typeof specs.micron_rating === "string"
+                ? String(specs.micron_rating)
+                : ""
+            }
+            className="rounded-md border border-input bg-card px-3 py-2"
+          >
+            <option value="">— None —</option>
+            {MICRON_OPTIONS.map((m) => (
+              <option key={m} value={m}>
+                {m} micron
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          Use
+          <select
+            name="spec_use"
+            defaultValue={typeof specs.use === "string" ? specs.use : ""}
+            className="rounded-md border border-input bg-card px-3 py-2"
+          >
+            <option value="">— None —</option>
+            {USE_OPTIONS.map((u) => (
+              <option key={u} value={u}>
+                {u}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          Filter type
+          <select
+            name="spec_filter_type"
+            defaultValue={typeof specs.filter_type === "string" ? specs.filter_type : ""}
+            className="rounded-md border border-input bg-card px-3 py-2"
+          >
+            <option value="">— None —</option>
+            {FILTER_TYPE_OPTIONS.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
       <label className="flex flex-col gap-1 text-sm">
         Technical specs (JSON)
         <textarea
@@ -189,6 +286,34 @@ export function ProductForm({ action, defaultValues, categories, brands, submitL
             defaultValue={defaultValues?.replacement_interval_days ?? ""}
             className="rounded-md border border-input bg-card px-3 py-2"
           />
+        </label>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <label className="flex flex-col gap-1 text-sm">
+          Shipping cost (€)
+          <input
+            name="shipping_cost"
+            type="number"
+            step="0.01"
+            defaultValue={defaultValues?.shipping_cost ?? ""}
+            placeholder="Leave blank for none"
+            className="rounded-md border border-input bg-card px-3 py-2"
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          Delivery estimate
+          <select
+            name="delivery_estimate"
+            defaultValue={defaultValues?.delivery_estimate ?? ""}
+            className="rounded-md border border-input bg-card px-3 py-2"
+          >
+            {DELIVERY_ESTIMATE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
         </label>
       </div>
 

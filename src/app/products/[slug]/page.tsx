@@ -5,7 +5,7 @@ import { SiteFooter } from "@/components/nav/site-footer";
 import { ProductCard } from "@/components/product/product-card";
 import { PurchasePanel } from "@/components/product/purchase-panel";
 import { getProductBySlug } from "@/lib/products/queries";
-import { STOCK_STATUS_LABEL } from "@/lib/inventory/rules";
+import { getAvailabilityLabel } from "@/lib/inventory/rules";
 import { getStoreSettings } from "@/lib/settings/queries";
 import { formatCurrency } from "@/lib/utils";
 
@@ -17,8 +17,13 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const stockStatus = product.availability_status;
   const specs = Object.entries((product.technical_specs as Record<string, unknown>) ?? {});
 
-  const settings = stockStatus === "out_of_stock" ? await getStoreSettings() : null;
-  const stockLabel = settings?.restock_mode ? settings.restock_label : STOCK_STATUS_LABEL[stockStatus];
+  const settings = await getStoreSettings();
+  const stockLabel = getAvailabilityLabel(
+    stockStatus,
+    product.delivery_estimate,
+    settings.restock_mode,
+    settings.restock_label,
+  );
 
   return (
     <>
@@ -69,13 +74,18 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               <span className="font-heading text-3xl font-medium">{formatCurrency(product.selling_price)}</span>
               <span className="text-sm text-muted-foreground">excl. VAT ({product.vat_rate}%)</span>
             </div>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {product.shipping_cost ? `+ ${formatCurrency(product.shipping_cost)} shipping` : "Free shipping"}
+            </p>
             <span
               className={
-                stockStatus === "out_of_stock"
-                  ? "mt-2 inline-block rounded-full bg-status-critical/10 px-3 py-1 text-xs font-medium text-status-critical"
-                  : stockStatus === "low_stock"
-                    ? "mt-2 inline-block rounded-full bg-status-warning/10 px-3 py-1 text-xs font-medium text-status-warning"
-                    : "mt-2 inline-block rounded-full bg-status-good/10 px-3 py-1 text-xs font-medium text-status-good"
+                product.delivery_estimate || (stockStatus === "out_of_stock" && settings.restock_mode)
+                  ? "mt-2 inline-block rounded-full bg-status-good/10 px-3 py-1 text-xs font-medium text-status-good"
+                  : stockStatus === "out_of_stock"
+                    ? "mt-2 inline-block rounded-full bg-status-critical/10 px-3 py-1 text-xs font-medium text-status-critical"
+                    : stockStatus === "low_stock"
+                      ? "mt-2 inline-block rounded-full bg-status-warning/10 px-3 py-1 text-xs font-medium text-status-warning"
+                      : "mt-2 inline-block rounded-full bg-status-good/10 px-3 py-1 text-xs font-medium text-status-good"
               }
             >
               {stockLabel}

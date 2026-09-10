@@ -6,6 +6,32 @@ import { requireAdmin } from "./guard";
 import { createClient } from "@/lib/supabase/server";
 import type { Json } from "@/types/database";
 
+// Common filter attributes (size, micron rating, use, filter type) get dedicated dropdowns in
+// the form instead of hand-typed JSON, but they still live in technical_specs — that's already
+// the flexible per-category spec store, already rendered generically on the product page, and
+// this way a product can still carry other ad-hoc specs (material, flow rate, ...) via the raw
+// JSON textarea alongside the four structured ones without the two mechanisms fighting.
+function mergeStructuredSpecs(formData: FormData, base: Json): Json {
+  const specs: Record<string, Json> =
+    typeof base === "object" && base !== null && !Array.isArray(base) ? { ...(base as Record<string, Json>) } : {};
+
+  const size = (formData.get("spec_size") as string) || "";
+  const micron = (formData.get("spec_micron") as string) || "";
+  const use = (formData.get("spec_use") as string) || "";
+  const filterType = (formData.get("spec_filter_type") as string) || "";
+
+  if (size) specs.size = size;
+  else delete specs.size;
+  if (micron) specs.micron_rating = Number(micron);
+  else delete specs.micron_rating;
+  if (use) specs.use = use;
+  else delete specs.use;
+  if (filterType) specs.filter_type = filterType;
+  else delete specs.filter_type;
+
+  return specs;
+}
+
 function readProductForm(formData: FormData) {
   const certifications = (formData.get("certifications") as string)
     .split(",")
@@ -23,9 +49,11 @@ function readProductForm(formData: FormData) {
       technicalSpecs = {};
     }
   }
+  technicalSpecs = mergeStructuredSpecs(formData, technicalSpecs);
 
   const categoryId = formData.get("category_id") as string;
   const brandId = formData.get("brand_id") as string;
+  const deliveryEstimate = (formData.get("delivery_estimate") as string) || null;
 
   return {
     sku: (formData.get("sku") as string | null)?.trim() || "",
@@ -41,6 +69,8 @@ function readProductForm(formData: FormData) {
     selling_price: Number(formData.get("selling_price")),
     vat_rate: Number(formData.get("vat_rate")) || 22,
     weight_kg: formData.get("weight_kg") ? Number(formData.get("weight_kg")) : null,
+    shipping_cost: formData.get("shipping_cost") ? Number(formData.get("shipping_cost")) : null,
+    delivery_estimate: deliveryEstimate as "ships_immediately" | "ships_2_3_days" | "made_to_order" | null,
     replacement_interval_days: formData.get("replacement_interval_days")
       ? Number(formData.get("replacement_interval_days"))
       : null,

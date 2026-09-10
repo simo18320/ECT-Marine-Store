@@ -1340,6 +1340,9 @@ export type Database = {
           category_id: string | null
           certifications: string[]
           created_at: string
+          delivery_estimate:
+            | Database["public"]["Enums"]["product_delivery_estimate"]
+            | null
           description: string | null
           dimensions: Json | null
           id: string
@@ -1352,6 +1355,7 @@ export type Database = {
           requires_compliance_ack: boolean
           search_vector: unknown
           selling_price: number
+          shipping_cost: number | null
           short_description: string | null
           sku: string
           slug: string
@@ -1367,6 +1371,9 @@ export type Database = {
           category_id?: string | null
           certifications?: string[]
           created_at?: string
+          delivery_estimate?:
+            | Database["public"]["Enums"]["product_delivery_estimate"]
+            | null
           description?: string | null
           dimensions?: Json | null
           id?: string
@@ -1379,6 +1386,7 @@ export type Database = {
           requires_compliance_ack?: boolean
           search_vector?: unknown
           selling_price: number
+          shipping_cost?: number | null
           short_description?: string | null
           sku: string
           slug: string
@@ -1394,6 +1402,9 @@ export type Database = {
           category_id?: string | null
           certifications?: string[]
           created_at?: string
+          delivery_estimate?:
+            | Database["public"]["Enums"]["product_delivery_estimate"]
+            | null
           description?: string | null
           dimensions?: Json | null
           id?: string
@@ -1406,6 +1417,7 @@ export type Database = {
           requires_compliance_ack?: boolean
           search_vector?: unknown
           selling_price?: number
+          shipping_cost?: number | null
           short_description?: string | null
           sku?: string
           slug?: string
@@ -2304,6 +2316,10 @@ export type Database = {
         | "failed"
         | "refunded"
         | "partially_refunded"
+      product_delivery_estimate:
+        | "ships_immediately"
+        | "ships_2_3_days"
+        | "made_to_order"
       replacement_status: "ok" | "due_soon" | "due" | "overdue" | "unknown"
       rfq_status: "draft" | "sent" | "quoted" | "awarded" | "cancelled"
       service_request_status:
@@ -2493,6 +2509,11 @@ export const Constants = {
         "failed",
         "refunded",
         "partially_refunded",
+      ],
+      product_delivery_estimate: [
+        "ships_immediately",
+        "ships_2_3_days",
+        "made_to_order",
       ],
       replacement_status: ["ok", "due_soon", "due", "overdue", "unknown"],
       rfq_status: ["draft", "sent", "quoted", "awarded", "cancelled"],

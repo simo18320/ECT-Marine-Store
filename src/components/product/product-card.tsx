@@ -1,15 +1,13 @@
 import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
-import { STOCK_STATUS_LABEL } from "@/lib/inventory/rules";
+import { getAvailabilityLabel } from "@/lib/inventory/rules";
 import { getStoreSettings } from "@/lib/settings/queries";
 import type { ProductListItem } from "@/lib/products/queries";
 
 export async function ProductCard({ product }: { product: ProductListItem }) {
   const status = product.availability_status;
-  // Restock mode swaps the honest "Out of stock" for a launch-friendly message — the
-  // underlying stock status (and cart/checkout behaviour) is unaffected, only this label.
-  const settings = status === "out_of_stock" ? await getStoreSettings() : null;
-  const label = settings?.restock_mode ? settings.restock_label : STOCK_STATUS_LABEL[status];
+  const settings = await getStoreSettings();
+  const label = getAvailabilityLabel(status, product.delivery_estimate, settings.restock_mode, settings.restock_label);
 
   return (
     <Link
@@ -43,11 +41,13 @@ export async function ProductCard({ product }: { product: ProductListItem }) {
         <span className="font-heading text-lg font-medium">{formatCurrency(product.selling_price)}</span>
         <span
           className={
-            status === "out_of_stock"
-              ? "rounded-full bg-status-critical/10 px-2 py-0.5 text-xs font-medium text-status-critical"
-              : status === "low_stock"
-                ? "rounded-full bg-status-warning/10 px-2 py-0.5 text-xs font-medium text-status-warning"
-                : "rounded-full bg-status-good/10 px-2 py-0.5 text-xs font-medium text-status-good"
+            product.delivery_estimate || (status === "out_of_stock" && settings.restock_mode)
+              ? "rounded-full bg-status-good/10 px-2 py-0.5 text-xs font-medium text-status-good"
+              : status === "out_of_stock"
+                ? "rounded-full bg-status-critical/10 px-2 py-0.5 text-xs font-medium text-status-critical"
+                : status === "low_stock"
+                  ? "rounded-full bg-status-warning/10 px-2 py-0.5 text-xs font-medium text-status-warning"
+                  : "rounded-full bg-status-good/10 px-2 py-0.5 text-xs font-medium text-status-good"
           }
         >
           {label}
