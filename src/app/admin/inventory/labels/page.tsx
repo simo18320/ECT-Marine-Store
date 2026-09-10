@@ -23,14 +23,21 @@ function specSummary(specs: unknown): string {
   return parts.join(" · ");
 }
 
-export default async function InventoryLabelsPage() {
+export default async function InventoryLabelsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ format?: string }>;
+}) {
   await requireStaff();
+  const { format } = await searchParams;
+  const isBrother = format === "brother";
   const products = await listProductsForLabels();
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
   // One label per physical unit in stock, not one per product — a product with 5 in inventory
-  // prints 5 identical copies of its label, ready to cut and stick on each unit.
+  // prints 5 identical copies of its label, ready to cut (A4) or already cut by the printer
+  // (Brother) and stuck on each unit.
   const labels = await Promise.all(
     products.flatMap((product) => {
       const quantity = product.inventory?.current_stock ?? 0;
@@ -46,18 +53,63 @@ export default async function InventoryLabelsPage() {
 
   return (
     <div className="bg-white p-8 text-black print:p-0">
-      <div className="mb-6 flex items-center justify-between print:hidden">
+      {isBrother && (
+        <style>{`@media print { @page { size: 50mm 30mm; margin: 0; } }`}</style>
+      )}
+
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 print:hidden">
         <Link href="/admin/inventory" className="text-sm text-gray-600 hover:text-black">
           ← Torna all&rsquo;inventario
         </Link>
-        <PrintButton label="Stampa etichette" />
+        <div className="flex items-center gap-4">
+          <div className="flex gap-2 text-sm">
+            <Link
+              href="/admin/inventory/labels"
+              className={!isBrother ? "font-semibold text-black" : "text-gray-500 hover:text-black"}
+            >
+              Foglio A4
+            </Link>
+            <span className="text-gray-300">|</span>
+            <Link
+              href="/admin/inventory/labels?format=brother"
+              className={isBrother ? "font-semibold text-black" : "text-gray-500 hover:text-black"}
+            >
+              Brother VC-500W (rotolo 50mm)
+            </Link>
+          </div>
+          <PrintButton label="Stampa etichette" />
+        </div>
       </div>
+
+      {isBrother && (
+        <p className="mb-4 text-xs text-gray-500 print:hidden">
+          Nella finestra di stampa scegli la Brother VC-500W come stampante e imposta la
+          dimensione pagina/etichetta su 50×30mm (o il rotolo continuo da 50mm che hai caricato)
+          — ogni etichetta esce già separata dalla successiva.
+        </p>
+      )}
 
       {labels.length === 0 ? (
         <p className="text-sm text-gray-600 print:hidden">
           Nessun prodotto ha scorte registrate in Inventory, quindi non c&rsquo;è nulla da
           etichettare — registra prima le quantità reali in Admin → Inventory, poi torna qui.
         </p>
+      ) : isBrother ? (
+        <div className="flex flex-col items-center gap-4 print:block print:gap-0">
+          {labels.map(({ product, qrDataUrl }, i) => (
+            <div
+              key={`${product.id}-${i}`}
+              className="flex flex-col items-center justify-center gap-1 border border-black p-2 text-center print:break-after-page print:border-0"
+              style={{ width: "50mm", height: "30mm" }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={qrDataUrl} alt="" className="h-12 w-12" />
+              <p className="font-mono text-sm font-bold leading-tight">{product.sku}</p>
+              <p className="line-clamp-1 text-[9px] leading-tight">{product.name}</p>
+              <p className="text-[9px] text-gray-600">{specSummary(product.technical_specs)}</p>
+            </div>
+          ))}
+        </div>
       ) : (
         <div className="grid grid-cols-3 gap-3 print:grid-cols-3">
           {labels.map(({ product, qrDataUrl }, i) => (
