@@ -1,5 +1,14 @@
 export type StockStatus = "in_stock" | "low_stock" | "out_of_stock";
 
+const VALID_STOCK_STATUSES: StockStatus[] = ["in_stock", "low_stock", "out_of_stock"];
+
+// availability_status is an untyped PostgREST computed-field column (typed as `string | null`
+// wherever it's selected) — narrow it defensively so a bad/unknown value fails safe as "out of
+// stock" rather than crashing or silently rendering as purchasable.
+export function parseAvailabilityStatus(status: string | null | undefined): StockStatus {
+  return VALID_STOCK_STATUSES.includes(status as StockStatus) ? (status as StockStatus) : "out_of_stock";
+}
+
 export interface StockLevel {
   current_stock: number;
   reserved_stock: number;

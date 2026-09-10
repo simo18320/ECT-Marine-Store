@@ -2,7 +2,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/nav/site-header";
 import { createClient } from "@/lib/supabase/server";
-import { getFilterByToken } from "@/lib/filters/queries";
+import { getFilterByToken, getFilterProductForPurchase } from "@/lib/filters/queries";
+import { getAvailabilityLabel, parseAvailabilityStatus } from "@/lib/inventory/rules";
+import { getStoreSettings } from "@/lib/settings/queries";
+import { PurchasePanel } from "@/components/product/purchase-panel";
 import {
   computeFilterReplacementStatus,
   REPLACEMENT_STATUS_COLOR,
@@ -18,6 +21,13 @@ export default async function FilterQrPage({ params }: { params: Promise<{ token
   if (!user) redirect(`/login?next=/filters/${token}`);
 
   const filter = await getFilterByToken(token);
+  const product = filter ? await getFilterProductForPurchase(filter.product_id) : null;
+  const stockStatus = product ? parseAvailabilityStatus(product.availability_status) : "out_of_stock";
+  const settings = product ? await getStoreSettings() : null;
+  const stockLabel =
+    product && settings
+      ? getAvailabilityLabel(stockStatus, product.delivery_estimate, settings.restock_mode, settings.restock_label)
+      : "";
 
   return (
     <>
@@ -61,6 +71,30 @@ export default async function FilterQrPage({ params }: { params: Promise<{ token
               <dt className="text-muted-foreground">Installed</dt>
               <dd>{filter.installation_date ?? "—"}</dd>
             </dl>
+
+            {product && (
+              <div className="mt-8 rounded-md border border-border p-4">
+                <h2 className="mb-1 text-sm font-semibold">Order a replacement</h2>
+                <p className="mb-3 text-sm text-muted-foreground">{stockLabel}</p>
+                <PurchasePanel
+                  productId={product.id}
+                  sku={product.sku}
+                  name={product.name}
+                  slug={product.slug}
+                  unitPrice={product.selling_price}
+                  vatRate={product.vat_rate}
+                  stockStatus={stockStatus}
+                  stockLabel={stockLabel}
+                  requiresComplianceAck={product.requires_compliance_ack}
+                />
+                <Link
+                  href={`/products/${product.slug}`}
+                  className="mt-3 inline-block text-sm text-muted-foreground hover:text-foreground"
+                >
+                  View full product details →
+                </Link>
+              </div>
+            )}
 
             {filter.yacht && (
               <Link

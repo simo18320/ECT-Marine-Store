@@ -1,19 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
-import type { StockStatus } from "@/lib/inventory/rules";
+import { parseAvailabilityStatus, type StockStatus } from "@/lib/inventory/rules";
 
 type Category = Database["public"]["Tables"]["categories"]["Row"];
 type Product = Database["public"]["Tables"]["products"]["Row"];
 type ProductImage = Database["public"]["Tables"]["product_images"]["Row"];
-
-const VALID_STOCK_STATUSES: StockStatus[] = ["in_stock", "low_stock", "out_of_stock"];
-
-// product_availability.status is an untyped view column (Database types it as `string | null`) —
-// narrow it defensively so a bad/unknown value fails safe as "out of stock" rather than crashing
-// or silently rendering as purchasable.
-function parseAvailabilityStatus(status: string | null | undefined): StockStatus {
-  return VALID_STOCK_STATUSES.includes(status as StockStatus) ? (status as StockStatus) : "out_of_stock";
-}
 
 export interface CategoryNode extends Category {
   children: CategoryNode[];
