@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireStaff } from "@/lib/admin/guard";
 import { listActiveProductsForSelect, listInventory, listRecentMovements } from "@/lib/admin/inventory";
 import { recordMovement, updateReorderPoint } from "@/lib/admin/inventory-actions";
@@ -13,7 +14,12 @@ export default async function AdminInventoryPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-3xl font-medium">Inventory</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-3xl font-medium">Inventory</h1>
+        <Link href="/admin/inventory/labels" className="text-sm text-primary hover:underline">
+          Stampa etichette prodotti
+        </Link>
+      </div>
 
       <section className="mb-10 rounded-md border border-border p-4">
         <h2 className="mb-3 text-sm font-semibold">Record a movement</h2>
