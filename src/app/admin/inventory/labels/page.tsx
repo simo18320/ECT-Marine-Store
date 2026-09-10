@@ -53,9 +53,7 @@ export default async function InventoryLabelsPage({
 
   return (
     <div className="bg-white p-8 text-black print:p-0">
-      {isBrother && (
-        <style>{`@media print { @page { size: 50mm 30mm; margin: 0; } }`}</style>
-      )}
+      {isBrother && <style>{`@media print { @page { size: 25mm 25mm; margin: 0; } }`}</style>}
 
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3 print:hidden">
         <Link href="/admin/inventory" className="text-sm text-gray-600 hover:text-black">
@@ -74,7 +72,7 @@ export default async function InventoryLabelsPage({
               href="/admin/inventory/labels?format=brother"
               className={isBrother ? "font-semibold text-black" : "text-gray-500 hover:text-black"}
             >
-              Brother VC-500W (rotolo 50mm)
+              Brother VC-500W (rotolo 25mm)
             </Link>
           </div>
           <PrintButton label="Stampa etichette" />
@@ -84,7 +82,7 @@ export default async function InventoryLabelsPage({
       {isBrother && (
         <p className="mb-4 text-xs text-gray-500 print:hidden">
           Nella finestra di stampa scegli la Brother VC-500W come stampante e imposta la
-          dimensione pagina/etichetta su 50×30mm (o il rotolo continuo da 50mm che hai caricato)
+          dimensione pagina/etichetta su 25×25mm (o il rotolo continuo da 25mm che hai caricato)
           — ogni etichetta esce già separata dalla successiva.
         </p>
       )}
@@ -99,14 +97,13 @@ export default async function InventoryLabelsPage({
           {labels.map(({ product, qrDataUrl }, i) => (
             <div
               key={`${product.id}-${i}`}
-              className="flex flex-col items-center justify-center gap-1 border border-black p-2 text-center print:break-after-page print:border-0"
-              style={{ width: "50mm", height: "30mm" }}
+              className="flex flex-col items-center justify-center gap-0.5 border border-black p-1 text-center print:break-after-page print:border-0"
+              style={{ width: "25mm", height: "25mm" }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={qrDataUrl} alt="" className="h-12 w-12" />
-              <p className="font-mono text-sm font-bold leading-tight">{product.sku}</p>
-              <p className="line-clamp-1 text-[9px] leading-tight">{product.name}</p>
-              <p className="text-[9px] text-gray-600">{specSummary(product.technical_specs)}</p>
+              <img src={qrDataUrl} alt="" style={{ width: "14mm", height: "14mm" }} />
+              <p className="font-mono text-[10px] font-bold leading-tight">{product.sku}</p>
+              <p className="text-[7px] leading-tight text-gray-600">{specSummary(product.technical_specs)}</p>
             </div>
           ))}
         </div>
