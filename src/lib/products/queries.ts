@@ -127,6 +127,56 @@ export async function getCategoryBySlug(slug: string) {
 
 export interface ProductFilters {
   inStockOnly?: boolean;
+  size?: string;
+  micron?: string;
+  use?: string;
+  filterType?: string;
+}
+
+export interface ProductSpecFacets {
+  sizes: string[];
+  microns: string[];
+  uses: string[];
+  filterTypes: string[];
+}
+
+/** Distinct values actually present in this result set, for populating the storefront filter
+ * dropdowns — computed from the same list the page already fetched, before the four facet
+ * filters are applied, so a dropdown never offers an option that would zero out the results. */
+export function getSpecFacets(items: ProductListItem[]): ProductSpecFacets {
+  const sizes = new Set<string>();
+  const microns = new Set<string>();
+  const uses = new Set<string>();
+  const filterTypes = new Set<string>();
+
+  for (const item of items) {
+    const specs = (item.technical_specs as Record<string, unknown>) ?? {};
+    if (typeof specs.size === "string") sizes.add(specs.size);
+    if (specs.micron_rating != null) microns.add(String(specs.micron_rating));
+    if (typeof specs.use === "string") uses.add(specs.use);
+    if (typeof specs.filter_type === "string") filterTypes.add(specs.filter_type);
+  }
+
+  return {
+    sizes: [...sizes].sort(),
+    microns: [...microns].sort((a, b) => Number(a) - Number(b)),
+    uses: [...uses].sort(),
+    filterTypes: [...filterTypes].sort(),
+  };
+}
+
+// Same in-memory filtering approach as inStockOnly below — the catalogue is small enough that
+// fetching a category/search result set and filtering in JS is simpler and safer than building
+// dynamic JSONB-path query strings for four optional, independent facets.
+function applySpecFilters(items: ProductListItem[], filters: ProductFilters): ProductListItem[] {
+  return items.filter((p) => {
+    const specs = (p.technical_specs as Record<string, unknown>) ?? {};
+    if (filters.size && specs.size !== filters.size) return false;
+    if (filters.micron && String(specs.micron_rating) !== filters.micron) return false;
+    if (filters.use && specs.use !== filters.use) return false;
+    if (filters.filterType && specs.filter_type !== filters.filterType) return false;
+    return true;
+  });
 }
 
 export async function getProductsByCategoryId(
@@ -143,8 +193,9 @@ export async function getProductsByCategoryId(
 
   if (error || !data) return [];
 
-  const items = (data as unknown as RawProductListRow[]).map(toListItem);
-  return filters.inStockOnly ? items.filter((p) => p.availability_status !== "out_of_stock") : items;
+  let items = (data as unknown as RawProductListRow[]).map(toListItem);
+  if (filters.inStockOnly) items = items.filter((p) => p.availability_status !== "out_of_stock");
+  return applySpecFilters(items, filters);
 }
 
 export async function searchProducts(
@@ -161,8 +212,9 @@ export async function searchProducts(
 
   if (error || !data) return [];
 
-  const items = (data as unknown as RawProductListRow[]).map(toListItem);
-  return filters.inStockOnly ? items.filter((p) => p.availability_status !== "out_of_stock") : items;
+  let items = (data as unknown as RawProductListRow[]).map(toListItem);
+  if (filters.inStockOnly) items = items.filter((p) => p.availability_status !== "out_of_stock");
+  return applySpecFilters(items, filters);
 }
 
 export async function getProductBySlug(slug: string): Promise<ProductDetail | null> {

@@ -1,25 +1,30 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/nav/site-header";
 import { SiteFooter } from "@/components/nav/site-footer";
 import { ProductCard } from "@/components/product/product-card";
-import { getCategoryBySlug, getProductsByCategoryId } from "@/lib/products/queries";
+import { ProductFilterBar } from "@/components/product/product-filter-bar";
+import { getCategoryBySlug, getProductsByCategoryId, getSpecFacets } from "@/lib/products/queries";
 
 export default async function CategoryPage({
   params,
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ inStock?: string }>;
+  searchParams: Promise<{ inStock?: string; size?: string; micron?: string; use?: string; filterType?: string }>;
 }) {
   const { slug } = await params;
-  const { inStock } = await searchParams;
+  const { inStock, size, micron, use, filterType } = await searchParams;
 
   const result = await getCategoryBySlug(slug);
   if (!result) notFound();
   const { category, children, breadcrumb } = result;
 
-  const products = await getProductsByCategoryId(category.id, { inStockOnly: inStock === "1" });
+  const inStockOnly = inStock === "1";
+  const allProducts = await getProductsByCategoryId(category.id, { inStockOnly });
+  const facets = getSpecFacets(allProducts);
+  const products = await getProductsByCategoryId(category.id, { inStockOnly, size, micron, use, filterType });
 
   return (
     <>
@@ -58,7 +63,7 @@ export default async function CategoryPage({
           </div>
         )}
 
-        {products.length > 0 && (
+        {allProducts.length > 0 && (
           <>
             <div className="mt-10 flex items-center justify-between">
               <h2 className="text-xl font-medium">Products</h2>
@@ -69,15 +74,24 @@ export default async function CategoryPage({
                 {inStock === "1" ? "Show all" : "In stock only"}
               </Link>
             </div>
-            <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
+            <Suspense fallback={null}>
+              <ProductFilterBar {...facets} />
+            </Suspense>
+            {products.length > 0 ? (
+              <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+                {products.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            ) : (
+              <p className="mt-4 text-sm text-muted-foreground">
+                No products match these filters. Try clearing one.
+              </p>
+            )}
           </>
         )}
 
-        {children.length === 0 && products.length === 0 && (
+        {children.length === 0 && allProducts.length === 0 && (
           <p className="mt-10 text-sm text-muted-foreground">
             No products in this category yet.
           </p>
