@@ -161,12 +161,22 @@ export async function deleteProduct(formData: FormData) {
 
 const PRODUCT_IMAGES_BUCKET = "product-images";
 
-export async function uploadProductImage(productId: string, formData: FormData) {
+// Both image forms use useActionState (see ProductFormState above) — a failed upload/import
+// used to throw and crash the whole edit page via the generic error boundary, which is exactly
+// how several real uploads went silently missing: the admin saw a crash, not a reason, and had
+// no way to tell which attempts actually failed.
+export type ImageActionState = { error?: string };
+
+export async function uploadProductImage(
+  productId: string,
+  _prevState: ImageActionState,
+  formData: FormData,
+): Promise<ImageActionState> {
   await requireAdmin();
   const supabase = await createClient();
 
   const file = formData.get("file") as File;
-  if (!file || file.size === 0) throw new Error("Choose an image file to upload.");
+  if (!file || file.size === 0) return { error: "Choose an image file to upload." };
 
   const extension = file.name.includes(".") ? file.name.split(".").pop() : "jpg";
   const path = `${productId}/${crypto.randomUUID()}.${extension}`;
@@ -174,15 +184,20 @@ export async function uploadProductImage(productId: string, formData: FormData) 
   const { error: uploadError } = await supabase.storage
     .from(PRODUCT_IMAGES_BUCKET)
     .upload(path, file, { contentType: file.type });
-  if (uploadError) throw new Error(uploadError.message);
+  if (uploadError) return { error: uploadError.message };
 
   const {
     data: { publicUrl },
   } = supabase.storage.from(PRODUCT_IMAGES_BUCKET).getPublicUrl(path);
   const altText = (formData.get("alt_text") as string) || null;
 
-  await supabase.from("product_images").insert({ product_id: productId, url: publicUrl, alt_text: altText });
+  const { error: insertError } = await supabase
+    .from("product_images")
+    .insert({ product_id: productId, url: publicUrl, alt_text: altText });
+  if (insertError) return { error: insertError.message };
+
   revalidatePath(`/admin/products/${productId}/edit`);
+  return {};
 }
 
 const MAX_IMPORTED_IMAGE_BYTES = 15 * 1024 * 1024; // 15MB — generous for a product photo, not for abuse
@@ -200,55 +215,79 @@ const EXTENSION_BY_CONTENT_TYPE: Record<string, string> = {
 // product-page views). Admin-only — this is a server-side fetch of an admin-supplied URL, so it
 // carries the same trust boundary as any other admin-only action, but is still capped and
 // content-type-checked rather than accepting an arbitrary, unbounded response.
-export async function importProductImageFromUrl(productId: string, formData: FormData) {
+export async function importProductImageFromUrl(
+  productId: string,
+  _prevState: ImageActionState,
+  formData: FormData,
+): Promise<ImageActionState> {
   await requireAdmin();
   const supabase = await createClient();
 
   const sourceUrl = (formData.get("source_url") as string)?.trim();
-  if (!sourceUrl) throw new Error("Paste the supplier's image URL.");
+  if (!sourceUrl) return { error: "Paste the supplier's image URL." };
 
   let parsed: URL;
   try {
     parsed = new URL(sourceUrl);
   } catch {
-    throw new Error("That doesn't look like a valid URL.");
+    return { error: "That doesn't look like a valid URL." };
   }
   if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
-    throw new Error("Only http/https URLs are supported.");
+    return { error: "Only http/https URLs are supported." };
   }
 
-  const response = await fetch(sourceUrl, { redirect: "follow" });
-  if (!response.ok) throw new Error(`Could not download that image (HTTP ${response.status}).`);
+  let response: Response;
+  try {
+    response = await fetch(sourceUrl, {
+      redirect: "follow",
+      // Plenty of supplier/manufacturer sites reject requests with no browser-like User-Agent
+      // (a bare Node fetch gets a 403 where a real browser gets the image) — this is the
+      // single biggest cause of "import" silently not working for a given product URL.
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        Accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+      },
+    });
+  } catch {
+    return { error: "Could not reach that URL — check it's correct and publicly accessible." };
+  }
+  if (!response.ok) return { error: `Could not download that image (HTTP ${response.status}).` };
 
   const contentType = response.headers.get("content-type")?.split(";")[0].trim() ?? "";
   const extension = EXTENSION_BY_CONTENT_TYPE[contentType];
   if (!extension) {
-    throw new Error(`That URL didn't return a supported image type (got "${contentType || "unknown"}").`);
+    return { error: `That URL didn't return a supported image type (got "${contentType || "unknown"}").` };
   }
 
   const contentLength = Number(response.headers.get("content-length") ?? 0);
   if (contentLength > MAX_IMPORTED_IMAGE_BYTES) {
-    throw new Error("That image is larger than 15MB — download and resize it first.");
+    return { error: "That image is larger than 15MB — download and resize it first." };
   }
 
   const bytes = await response.arrayBuffer();
   if (bytes.byteLength > MAX_IMPORTED_IMAGE_BYTES) {
-    throw new Error("That image is larger than 15MB — download and resize it first.");
+    return { error: "That image is larger than 15MB — download and resize it first." };
   }
 
   const path = `${productId}/${crypto.randomUUID()}.${extension}`;
   const { error: uploadError } = await supabase.storage
     .from(PRODUCT_IMAGES_BUCKET)
     .upload(path, bytes, { contentType });
-  if (uploadError) throw new Error(uploadError.message);
+  if (uploadError) return { error: uploadError.message };
 
   const {
     data: { publicUrl },
   } = supabase.storage.from(PRODUCT_IMAGES_BUCKET).getPublicUrl(path);
   const altText = (formData.get("alt_text") as string) || null;
 
-  await supabase.from("product_images").insert({ product_id: productId, url: publicUrl, alt_text: altText });
+  const { error: insertError } = await supabase
+    .from("product_images")
+    .insert({ product_id: productId, url: publicUrl, alt_text: altText });
+  if (insertError) return { error: insertError.message };
+
   revalidatePath(`/admin/products/${productId}/edit`);
+  return {};
 }
 
 export async function deleteProductImage(productId: string, formData: FormData) {
