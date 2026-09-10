@@ -23,7 +23,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="flex min-h-full flex-col">
-      <header className="relative border-b border-border bg-sidebar text-sidebar-foreground">
+      <header className="relative border-b border-border bg-sidebar text-sidebar-foreground print:hidden">
         <div className="mx-auto flex max-w-6xl items-center gap-6 px-6 py-3">
           <MobileNav links={NAV_LINKS} variant="dark" />
           <Link href="/admin" className="shrink-0">

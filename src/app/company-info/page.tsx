@@ -1,17 +1,18 @@
 import { SiteHeader } from "@/components/nav/site-header";
 import { SiteFooter } from "@/components/nav/site-footer";
+import { COMPANY } from "@/lib/company";
 
 export const metadata = {
   title: "Company information — ECT Marine Store",
 };
 
 const FIELDS: { label: string; value: string }[] = [
-  { label: "Ragione sociale", value: "Eco Cleaning Technologies Consulting Srl" },
-  { label: "Sede legale", value: "Via di Pratale 28, 56127 Pisa (PI), Italia" },
-  { label: "Partita IVA / Codice Fiscale", value: "02488080504" },
-  { label: "REA", value: "PI-257266" },
-  { label: "Capitale sociale", value: "€ 10.000,00 i.v." },
-  { label: "PEC", value: "ecocleaningtechnologies@lamiapec.it" },
+  { label: "Ragione sociale", value: COMPANY.legalName },
+  { label: "Sede legale", value: `${COMPANY.addressLine1}, ${COMPANY.addressLine2}` },
+  { label: "Partita IVA / Codice Fiscale", value: COMPANY.vatNumber },
+  { label: "REA", value: COMPANY.rea },
+  { label: "Capitale sociale", value: COMPANY.shareCapital },
+  { label: "PEC", value: COMPANY.pec },
 ];
 
 export default function CompanyInfoPage() {

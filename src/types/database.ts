@@ -418,6 +418,66 @@ export type Database = {
           },
         ]
       }
+      delivery_notes: {
+        Row: {
+          carrier_name: string | null
+          causale: string
+          created_at: string
+          created_by: string | null
+          id: string
+          issued_at: string
+          notes: string | null
+          number: number
+          order_id: string
+          package_count: number
+          total_weight_kg: number | null
+          year: number
+        }
+        Insert: {
+          carrier_name?: string | null
+          causale?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          issued_at?: string
+          notes?: string | null
+          number: number
+          order_id: string
+          package_count?: number
+          total_weight_kg?: number | null
+          year: number
+        }
+        Update: {
+          carrier_name?: string | null
+          causale?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          issued_at?: string
+          notes?: string | null
+          number?: number
+          order_id?: string
+          package_count?: number
+          total_weight_kg?: number | null
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_notes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_notes_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       equipment: {
         Row: {
           created_at: string

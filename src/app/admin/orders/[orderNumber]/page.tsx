@@ -3,6 +3,9 @@ import { notFound } from "next/navigation";
 import { requireStaff } from "@/lib/admin/guard";
 import { getOrderAdmin } from "@/lib/admin/orders";
 import { overrideOrderStatus } from "@/lib/admin/order-actions";
+import { generateDeliveryNote } from "@/lib/orders/delivery-actions";
+import { listDeliveryNotesForOrder, estimateOrderWeightKg } from "@/lib/orders/delivery-notes";
+import { GenerateDdtForm } from "@/components/admin/generate-ddt-form";
 import { formatCurrency } from "@/lib/utils";
 
 const STATUSES = ["pending", "paid", "processing", "shipped", "delivered", "cancelled", "refunded"];
@@ -17,7 +20,13 @@ export default async function AdminOrderDetailPage({
   const order = await getOrderAdmin(orderNumber);
   if (!order) notFound();
 
+  const [deliveryNotes, estimatedWeightKg] = await Promise.all([
+    listDeliveryNotesForOrder(order.id),
+    estimateOrderWeightKg(order.id),
+  ]);
+
   const updateStatus = overrideOrderStatus.bind(null, order.id);
+  const generateDdt = generateDeliveryNote.bind(null, order.id);
 
   return (
     <div className="max-w-2xl">
@@ -89,6 +98,45 @@ export default async function AdminOrderDetailPage({
           </p>
         </div>
       )}
+
+      <div className="mt-8">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-semibold">Fulfillment</h2>
+          <a
+            href={`/admin/orders/${order.order_number}/label`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-primary hover:underline"
+          >
+            Shipping label
+          </a>
+        </div>
+
+        {deliveryNotes.length > 0 && (
+          <ul className="mb-3 flex flex-col gap-2">
+            {deliveryNotes.map((note) => (
+              <li key={note.id} className="flex items-center justify-between rounded-md border border-border p-3 text-sm">
+                <span>
+                  DDT {note.number}/{note.year}
+                  <span className="ml-2 text-muted-foreground">
+                    {new Date(note.issued_at).toLocaleDateString("en-GB")}
+                  </span>
+                </span>
+                <a
+                  href={`/admin/delivery-notes/${note.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  View / print
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <GenerateDdtForm action={generateDdt} defaultWeightKg={estimatedWeightKg} />
+      </div>
 
       {order.payments.length > 0 && (
         <div className="mt-6">
