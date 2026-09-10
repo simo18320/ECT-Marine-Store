@@ -6,7 +6,16 @@ import type { ProductFormState } from "@/lib/admin/product-actions";
 
 type Product = Database["public"]["Tables"]["products"]["Row"];
 
-const SIZE_OPTIONS = ['10"', '20"', '2.5" x 10"', '4.5" x 10" (Big Blue)', '4.5" x 20" (Big Blue)', '5"'];
+const SIZE_OPTIONS = [
+  '10"',
+  '20"',
+  '2.5" x 5"',
+  '2.5" x 10"',
+  '2.5" x 20"',
+  '4.5" x 10" (Big Blue)',
+  '4.5" x 20" (Big Blue)',
+  '5"',
+];
 const MICRON_OPTIONS = ["1", "5", "10", "20", "25", "50"];
 const USE_OPTIONS = [
   "Sediment removal",
