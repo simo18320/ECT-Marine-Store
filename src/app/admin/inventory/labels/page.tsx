@@ -75,6 +75,12 @@ export default async function InventoryLabelsPage({
               Brother VC-500W (rotolo 25mm)
             </Link>
           </div>
+          <a
+            href="/admin/inventory/labels/export"
+            className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-100"
+          >
+            Esporta CSV per P-touch Editor
+          </a>
           <PrintButton label="Stampa etichette" />
         </div>
       </div>
@@ -86,6 +92,15 @@ export default async function InventoryLabelsPage({
           — ogni etichetta esce già separata dalla successiva.
         </p>
       )}
+
+      <p className="mb-4 text-xs text-gray-500 print:hidden">
+        Per stampare da P-touch Editor invece del browser: scarica il CSV, poi in P-touch Editor
+        crea/apri il template etichetta, vai su &ldquo;Database&rdquo; → &ldquo;Connetti
+        database&rdquo; e seleziona il file — collega il campo QR del template alla colonna
+        &ldquo;QR&rdquo; e gli altri campi testo a SKU/Nome/Dimensione/Micron/Prezzo. C&rsquo;è
+        già una riga per ogni pezzo in scorta, quindi la stampa in serie produce il numero giusto
+        di etichette senza doverlo impostare a mano.
+      </p>
 
       {labels.length === 0 ? (
         <p className="text-sm text-gray-600 print:hidden">
