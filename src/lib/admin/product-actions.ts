@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "./guard";
 import { createClient } from "@/lib/supabase/server";
+import { generateUniqueSlug } from "@/lib/slug";
 import type { Json } from "@/types/database";
 
 // Common filter attributes (size, micron rating, use, filter type) get dedicated dropdowns in
@@ -113,35 +114,6 @@ async function generateNextSku(supabase: Awaited<ReturnType<typeof createClient>
   return `ECT-${String(nextNumber).padStart(4, "0")}`;
 }
 
-const SLUG_MAX_LENGTH = 60;
-
-function slugify(text: string): string {
-  const full = text
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // strip accents
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-
-  if (full.length <= SLUG_MAX_LENGTH) return full;
-  // Cut at the last word boundary within the limit rather than mid-word \u2014 supplier product
-  // names run long, and "...sediment-filter-cartridge-fit" reads as broken, not just truncated.
-  return full.slice(0, SLUG_MAX_LENGTH).replace(/-[^-]*$/, "");
-}
-
-// Mirrors the SKU auto-generation: left blank, the slug is derived from the product name —
-// still just a normal editable field afterward if the admin wants to shorten or tweak it.
-async function generateUniqueSlug(supabase: Awaited<ReturnType<typeof createClient>>, name: string): Promise<string> {
-  const base = slugify(name) || "product";
-  const { data } = await supabase.from("products").select("slug").like("slug", `${base}%`);
-  const existing = new Set((data ?? []).map((row) => row.slug));
-
-  if (!existing.has(base)) return base;
-  let suffix = 2;
-  while (existing.has(`${base}-${suffix}`)) suffix++;
-  return `${base}-${suffix}`;
-}
-
 // The form uses useActionState so a bad slug/SKU shows inline instead of crashing the whole
 // page — a plain `<form action={fn}>` has no channel back to the client for a thrown error
 // short of Next's generic error boundary, which is a jarring way to report "pick another slug".
@@ -152,7 +124,7 @@ export async function createProduct(_prevState: ProductFormState, formData: Form
   const supabase = await createClient();
   const fields = readProductForm(formData);
   const sku = fields.sku || (await generateNextSku(supabase));
-  const slug = fields.slug || (await generateUniqueSlug(supabase, fields.name));
+  const slug = fields.slug || (await generateUniqueSlug(supabase, "products", fields.name, "product"));
 
   const { data, error } = await supabase.from("products").insert({ ...fields, sku, slug }).select("id").single();
   if (error || !data) {

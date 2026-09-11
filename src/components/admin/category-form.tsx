@@ -26,8 +26,8 @@ export function CategoryForm({ action, defaultValues, categories, submitLabel }:
         Slug
         <input
           name="slug"
-          required
           defaultValue={defaultValues?.slug ?? ""}
+          placeholder={defaultValues ? undefined : "Auto-generated from name if left blank"}
           className="rounded-md border border-input bg-card px-3 py-2 font-mono"
         />
       </label>
