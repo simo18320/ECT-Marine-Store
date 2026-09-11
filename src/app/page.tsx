@@ -6,6 +6,13 @@ import { getCategoryTree } from "@/lib/products/queries";
 
 // Simple line icons per top-level category, keyed by slug — no icon library needed for four
 // glyphs, and it keeps the category cards from being plain text tiles.
+const CATEGORY_BLURB: Record<string, string> = {
+  water: "Filtration, UV-C and reverse osmosis for onboard water systems.",
+  air: "Purification and treatment equipment for cabin and engine-room air.",
+  hygiene: "Sanitation and surface-treatment supplies for crew and guests.",
+  "maintenance-kits": "Bundled spares and consumables to keep every system running.",
+};
+
 const CATEGORY_ICON: Record<string, React.ReactNode> = {
   water: (
     <path
@@ -66,13 +73,12 @@ export default async function HomePage() {
             Eco Cleaning Technologies
           </p>
           <h1 className="max-w-3xl text-5xl font-medium text-balance text-white sm:text-7xl">
-            Water. Air. Hygiene.
+            Hard to find.
             <br />
-            <span className="italic">Engineered for Yachts.</span>
+            <span className="italic">Easy with ECT.</span>
           </h1>
           <p className="max-w-xl text-base text-white/85 sm:text-lg">
-            The technical digital platform for water, air, hygiene and maintenance management on
-            superyachts — from filtration and UV-C to your yacht&rsquo;s full equipment register.
+            The spare part you&rsquo;re looking for isn&rsquo;t a problem. We&rsquo;ll find it for you.
           </p>
           <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
             <Link
@@ -91,24 +97,40 @@ export default async function HomePage() {
         </section>
 
         <section className="mx-auto w-full max-w-6xl px-6 pb-24">
-          <h2 className="mb-6 text-xl font-medium">Shop by category</h2>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div className="mb-8 max-w-xl">
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">Explore the range</p>
+            <h2 className="mt-2 text-2xl font-medium sm:text-3xl">Everything your yacht&rsquo;s systems need</h2>
+          </div>
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {categories.map((category) => (
               <Link
                 key={category.id}
                 href={`/categories/${category.slug}`}
-                className="group flex flex-col items-center gap-3 rounded-2xl border border-border bg-card px-6 py-8 text-center shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-primary hover:shadow-lg"
+                className="group relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-primary/60 hover:shadow-lg"
               >
-                <svg
-                  viewBox="0 0 24 24"
-                  className="h-8 w-8 text-accent-foreground/60 transition-colors group-hover:text-primary"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                >
-                  {CATEGORY_ICON[category.slug]}
-                </svg>
-                <span className="font-medium">{category.name}</span>
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 transition-colors group-hover:bg-primary/15">
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-6 w-6 text-primary"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                  >
+                    {CATEGORY_ICON[category.slug]}
+                  </svg>
+                </span>
+                <div>
+                  <span className="font-medium">{category.name}</span>
+                  {CATEGORY_BLURB[category.slug] && (
+                    <p className="mt-1.5 text-sm text-muted-foreground">{CATEGORY_BLURB[category.slug]}</p>
+                  )}
+                </div>
+                <span className="mt-auto flex items-center gap-1 text-sm font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100">
+                  Shop now
+                  <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M2.5 6h7m0 0L6 2.5M9.5 6 6 9.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </span>
               </Link>
             ))}
           </div>
