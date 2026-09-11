@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatCurrency } from "@/lib/utils";
 import { generateQrDataUrl } from "@/lib/qr/generate";
 import { PrintButton } from "@/components/admin/print-button";
+import { LabelFormatToggle } from "@/components/admin/label-format-toggle";
 
 async function listProductsForLabels() {
   const supabase = await createClient();
@@ -30,6 +31,7 @@ export default async function InventoryLabelsPage({
 }) {
   await requireStaff();
   const { format } = await searchParams;
+  const hasExplicitFormat = format !== undefined;
   const isBrother = format === "brother";
   const products = await listProductsForLabels();
 
@@ -60,21 +62,7 @@ export default async function InventoryLabelsPage({
           ← Torna all&rsquo;inventario
         </Link>
         <div className="flex items-center gap-4">
-          <div className="flex gap-2 text-sm">
-            <Link
-              href="/admin/inventory/labels"
-              className={!isBrother ? "font-semibold text-black" : "text-gray-500 hover:text-black"}
-            >
-              Foglio A4
-            </Link>
-            <span className="text-gray-300">|</span>
-            <Link
-              href="/admin/inventory/labels?format=brother"
-              className={isBrother ? "font-semibold text-black" : "text-gray-500 hover:text-black"}
-            >
-              Brother VC-500W (rotolo 25mm)
-            </Link>
-          </div>
+          <LabelFormatToggle isBrother={isBrother} hasExplicitFormat={hasExplicitFormat} />
           <a
             href="/admin/inventory/labels/export"
             className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-100"
