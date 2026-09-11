@@ -50,14 +50,41 @@ export default async function CategoryPage({
         )}
 
         {children.length > 0 && (
-          <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+          <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {children.map((child) => (
               <Link
                 key={child.id}
                 href={`/categories/${child.slug}`}
-                className="rounded-2xl border border-border bg-card p-5 text-center font-medium shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-primary/60 hover:shadow-lg"
+                className="group relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-primary/60 hover:shadow-lg"
               >
-                {child.name}
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 transition-colors group-hover:bg-primary/15">
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-6 w-6 text-primary"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                  >
+                    <path
+                      d="M4 7.5 12 4l8 3.5v9L12 20l-8-3.5v-9Z"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path d="M4 7.5 12 11l8-3.5M12 11v9" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </span>
+                <div>
+                  <span className="font-medium">{child.name}</span>
+                  {child.description && (
+                    <p className="mt-1.5 text-sm text-muted-foreground">{child.description}</p>
+                  )}
+                </div>
+                <span className="mt-auto flex items-center gap-1 text-sm font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100">
+                  Shop now
+                  <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M2.5 6h7m0 0L6 2.5M9.5 6 6 9.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </span>
               </Link>
             ))}
           </div>
