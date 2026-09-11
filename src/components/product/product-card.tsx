@@ -20,7 +20,7 @@ export async function ProductCard({ product }: { product: ProductListItem }) {
           <img
             src={product.primary_image.url}
             alt={product.primary_image.alt_text ?? product.name}
-            className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+            className="h-full w-full object-contain transition duration-300 group-hover:scale-105"
           />
         ) : (
           <svg viewBox="0 0 24 24" className="h-10 w-10 text-accent-foreground/30" fill="none" stroke="currentColor" strokeWidth="1.2">

@@ -24,7 +24,7 @@ export function ProductImagesSection({ images, uploadAction, importAction, delet
         {images.map((image) => (
           <li key={image.id} className="group relative aspect-square overflow-hidden rounded-lg border border-border bg-secondary">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={image.url} alt={image.alt_text ?? ""} className="h-full w-full object-cover" />
+            <img src={image.url} alt={image.alt_text ?? ""} className="h-full w-full object-contain" />
             <form action={deleteAction} className="absolute right-2 top-2">
               <input type="hidden" name="id" value={image.id} />
               <button

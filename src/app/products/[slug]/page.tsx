@@ -50,7 +50,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               <img
                 src={product.images[0].url}
                 alt={product.images[0].alt_text ?? product.name}
-                className="h-full w-full object-cover"
+                className="h-full w-full object-contain"
               />
             ) : (
               <svg viewBox="0 0 24 24" className="h-16 w-16 text-accent-foreground/30" fill="none" stroke="currentColor" strokeWidth="1.2">
