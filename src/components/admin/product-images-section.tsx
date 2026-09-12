@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState, type FormEvent } from "react";
 import type { Database } from "@/types/database";
 import type { ImageActionState } from "@/lib/admin/product-actions";
 
@@ -13,9 +13,26 @@ interface ProductImagesSectionProps {
   deleteAction: (formData: FormData) => void;
 }
 
+// Matches the server's serverActions.bodySizeLimit (next.config.ts) — checking here first
+// avoids Next's raw "Body exceeded 1 MB limit"-style crash page for an oversized file and shows
+// the same kind of friendly, inline message the URL-import path already gives.
+const MAX_UPLOAD_BYTES = 15 * 1024 * 1024;
+
 export function ProductImagesSection({ images, uploadAction, importAction, deleteAction }: ProductImagesSectionProps) {
   const [uploadState, uploadFormAction, uploadPending] = useActionState(uploadAction, {});
   const [importState, importFormAction, importPending] = useActionState(importAction, {});
+  const [clientUploadError, setClientUploadError] = useState<string | null>(null);
+
+  function handleUploadSubmit(event: FormEvent<HTMLFormElement>) {
+    const input = event.currentTarget.querySelector<HTMLInputElement>('input[name="file"]');
+    const file = input?.files?.[0];
+    if (file && file.size > MAX_UPLOAD_BYTES) {
+      event.preventDefault();
+      setClientUploadError("That photo is larger than 15MB — resize it first.");
+      return;
+    }
+    setClientUploadError(null);
+  }
 
   return (
     <section className="mt-12">
@@ -39,12 +56,16 @@ export function ProductImagesSection({ images, uploadAction, importAction, delet
         {images.length === 0 && <p className="col-span-full text-sm text-muted-foreground">No images yet.</p>}
       </ul>
 
-      {uploadState.error && (
+      {(clientUploadError || uploadState.error) && (
         <p className="mb-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {uploadState.error}
+          {clientUploadError || uploadState.error}
         </p>
       )}
-      <form action={uploadFormAction} className="mb-3 flex flex-wrap items-end gap-2 rounded-md border border-border p-3">
+      <form
+        action={uploadFormAction}
+        onSubmit={handleUploadSubmit}
+        className="mb-3 flex flex-wrap items-end gap-2 rounded-md border border-border p-3"
+      >
         <label className="flex flex-col gap-1 text-sm">
           Upload a photo
           <input name="file" type="file" accept="image/*" required className="text-sm" />

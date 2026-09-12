@@ -161,6 +161,31 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           </div>
         )}
 
+        {product.documents.length > 0 && (
+          <div className="mt-10 max-w-3xl">
+            <h2 className="mb-3 text-xl font-medium">Documents</h2>
+            <ul className="space-y-2">
+              {product.documents.map((doc) => (
+                <li key={doc.id}>
+                  <a
+                    href={doc.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium hover:border-primary/60 hover:text-primary"
+                  >
+                    <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0 text-accent-foreground/60" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M14 3v5h5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    {doc.title}
+                    <span className="ml-auto text-xs font-normal capitalize text-muted-foreground">{doc.doc_type}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {product.recommendations.length > 0 && (
           <div className="mt-14">
             <h2 className="mb-4 text-xl font-medium">Recommended with this product</h2>
