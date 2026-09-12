@@ -240,6 +240,23 @@ const EXTENSION_BY_CONTENT_TYPE: Record<string, string> = {
   "image/gif": "gif",
   "image/avif": "avif",
 };
+const CONTENT_TYPE_BY_EXTENSION: Record<string, string> = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+  gif: "image/gif",
+  avif: "image/avif",
+};
+
+// Some supplier CDNs (seen on real aerofeel.com media URLs) serve a valid image with no
+// Content-Type header at all — falling back to the URL's own file extension recovers those
+// instead of rejecting a perfectly good photo just because the header was missing.
+function guessExtensionFromUrl(url: URL): string | null {
+  const match = /\.([a-z0-9]+)$/i.exec(url.pathname);
+  const ext = match?.[1]?.toLowerCase();
+  return ext && ext in CONTENT_TYPE_BY_EXTENSION ? ext : null;
+}
 
 // Downloads a supplier/manufacturer photo server-side and re-hosts it in our own bucket, rather
 // than either a manual download-then-upload round trip or hotlinking their URL directly (which
@@ -286,10 +303,16 @@ export async function importProductImageFromUrl(
   }
   if (!response.ok) return { error: `Could not download that image (HTTP ${response.status}).` };
 
-  const contentType = response.headers.get("content-type")?.split(";")[0].trim() ?? "";
-  const extension = EXTENSION_BY_CONTENT_TYPE[contentType];
+  const headerContentType = response.headers.get("content-type")?.split(";")[0].trim() ?? "";
+  let extension = EXTENSION_BY_CONTENT_TYPE[headerContentType];
+  let contentType = headerContentType;
   if (!extension) {
-    return { error: `That URL didn't return a supported image type (got "${contentType || "unknown"}").` };
+    const guessed = guessExtensionFromUrl(parsed);
+    if (!guessed) {
+      return { error: `That URL didn't return a supported image type (got "${headerContentType || "unknown"}").` };
+    }
+    extension = guessed;
+    contentType = CONTENT_TYPE_BY_EXTENSION[guessed];
   }
 
   const contentLength = Number(response.headers.get("content-length") ?? 0);

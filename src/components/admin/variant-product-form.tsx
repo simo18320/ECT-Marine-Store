@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useId, useState } from "react";
 import { useActionState } from "react";
 import type { VariantFormState } from "@/lib/admin/product-variant-actions";
@@ -68,9 +69,20 @@ export function VariantProductForm({ action, categories, brands }: VariantProduc
         </p>
       )}
       {state.created && state.created.length > 0 && (
-        <p className="rounded-md border border-status-good/40 bg-status-good/10 px-3 py-2 text-sm text-status-good">
-          Created {state.created.length} product{state.created.length === 1 ? "" : "s"}: {state.created.join(", ")}
-        </p>
+        <div className="rounded-md border border-status-good/40 bg-status-good/10 px-3 py-3 text-sm text-status-good">
+          <p className="mb-2 font-medium">
+            Created {state.created.length} product{state.created.length === 1 ? "" : "s"} — add photos:
+          </p>
+          <ul className="flex flex-col gap-1">
+            {state.created.map((p) => (
+              <li key={p.id}>
+                <Link href={`/admin/products/${p.id}/edit`} className="underline hover:no-underline">
+                  {p.sku} — {p.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       <div className="rounded-lg border border-border p-4">

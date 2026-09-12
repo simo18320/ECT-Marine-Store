@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { generateUniqueSlug } from "@/lib/slug";
 import type { Json } from "@/types/database";
 
-export type VariantFormState = { error?: string; created?: string[] };
+export type VariantFormState = { error?: string; created?: { id: string; sku: string; name: string }[] };
 
 async function generateNextSku(supabase: Awaited<ReturnType<typeof createClient>>): Promise<string> {
   const { data } = await supabase.from("products").select("sku").like("sku", "ECT-%");
@@ -76,7 +76,7 @@ export async function createProductVariants(
     });
   }
 
-  const created: string[] = [];
+  const created: { id: string; sku: string; name: string }[] = [];
 
   for (const row of rows) {
     const suffix = [row.size, row.filterClass].filter(Boolean).join(" ") || null;
@@ -89,7 +89,7 @@ export async function createProductVariants(
     const sku = row.sku || (await generateNextSku(supabase));
     const slug = await generateUniqueSlug(supabase, "products", name, "product");
 
-    const { error } = await supabase.from("products").insert({
+    const { data: inserted, error } = await supabase.from("products").insert({
       sku,
       name,
       slug,
@@ -109,16 +109,16 @@ export async function createProductVariants(
       certifications: [],
       requires_compliance_ack: false,
       is_active: true,
-    });
+    }).select("id").single();
 
-    if (error) {
+    if (error || !inserted) {
       return {
-        error: `Created ${created.length} of ${rows.length} before failing on "${name}": ${error.message}`,
+        error: `Created ${created.length} of ${rows.length} before failing on "${name}": ${error?.message ?? "unknown error"}`,
         created,
       };
     }
 
-    created.push(sku);
+    created.push({ id: inserted.id, sku, name });
   }
 
   revalidatePath("/admin/products");
