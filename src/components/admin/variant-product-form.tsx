@@ -20,10 +20,21 @@ interface VariantRow {
   sellingPrice: string;
   weightKg: string;
   sku: string;
+  multiplier: string;
 }
 
 function emptyRow(key: string): VariantRow {
-  return { key, size: "", filterClass: "", grossPrice: "", purchaseCost: "", sellingPrice: "", weightKg: "", sku: "" };
+  return {
+    key,
+    size: "",
+    filterClass: "",
+    grossPrice: "",
+    purchaseCost: "",
+    sellingPrice: "",
+    weightKg: "",
+    sku: "",
+    multiplier: "",
+  };
 }
 
 // Mirrors the markup rule used for the aerofeel.com import batch — net cost is the resold
@@ -36,21 +47,52 @@ function computeFromGross(gross: string): { purchaseCost: string; sellingPrice: 
   return { purchaseCost: purchaseCost.toFixed(2), sellingPrice: sellingPrice.toFixed(2) };
 }
 
+// Same relationship aerofeel's own catalog uses (e.g. a 2×20m roll costs exactly double a
+// 1×20m roll) — price scales linearly with a size multiplier, but the ratio is applied to
+// *this* store's own row-1 price, not aerofeel's.
+function scalePrice(basePrice: string, baseMultiplier: string, targetMultiplier: string): string | null {
+  const base = Number(basePrice);
+  const baseM = Number(baseMultiplier);
+  const targetM = Number(targetMultiplier);
+  if (!basePrice || !baseMultiplier || !targetMultiplier) return null;
+  if (Number.isNaN(base) || Number.isNaN(baseM) || Number.isNaN(targetM) || baseM <= 0) return null;
+  return ((base / baseM) * targetM).toFixed(2);
+}
+
+function applyMultiplierScaling(rows: VariantRow[]): VariantRow[] {
+  const base = rows[0];
+  if (!base || !base.multiplier || !base.sellingPrice) return rows;
+  return rows.map((r, i) => {
+    if (i === 0 || !r.multiplier) return r;
+    const scaledSelling = scalePrice(base.sellingPrice, base.multiplier, r.multiplier);
+    if (scaledSelling == null) return r;
+    const scaledCost = base.purchaseCost ? scalePrice(base.purchaseCost, base.multiplier, r.multiplier) : null;
+    return { ...r, sellingPrice: scaledSelling, ...(scaledCost != null ? { purchaseCost: scaledCost } : {}) };
+  });
+}
+
 export function VariantProductForm({ action, categories, brands }: VariantProductFormProps) {
   const [state, formAction, isPending] = useActionState(action, {});
   const idPrefix = useId();
   const [rows, setRows] = useState<VariantRow[]>([emptyRow(`${idPrefix}-0`), emptyRow(`${idPrefix}-1`)]);
 
-  function updateRow(key: string, patch: Partial<VariantRow>) {
-    setRows((prev) => prev.map((r) => (r.key === key ? { ...r, ...patch } : r)));
+  function updateRow(key: string, patch: Partial<VariantRow>, rescale = false) {
+    setRows((prev) => {
+      const next = prev.map((r) => (r.key === key ? { ...r, ...patch } : r));
+      return rescale ? applyMultiplierScaling(next) : next;
+    });
   }
 
   function onGrossPriceChange(key: string, gross: string) {
     const computed = computeFromGross(gross);
-    updateRow(key, {
-      grossPrice: gross,
-      ...(computed ? { purchaseCost: computed.purchaseCost, sellingPrice: computed.sellingPrice } : {}),
-    });
+    updateRow(
+      key,
+      {
+        grossPrice: gross,
+        ...(computed ? { purchaseCost: computed.purchaseCost, sellingPrice: computed.sellingPrice } : {}),
+      },
+      true,
+    );
   }
 
   function addRow() {
@@ -188,7 +230,7 @@ export function VariantProductForm({ action, categories, brands }: VariantProduc
                   </button>
                 )}
               </div>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
                 <label className="flex flex-col gap-1 text-xs">
                   Size
                   <input
@@ -206,6 +248,17 @@ export function VariantProductForm({ action, categories, brands }: VariantProduc
                     value={row.filterClass}
                     onChange={(e) => updateRow(row.key, { filterClass: e.target.value })}
                     placeholder="e.g. G4"
+                    className="rounded-md border border-input bg-card px-2 py-1.5 text-sm"
+                  />
+                </label>
+                <label className="flex flex-col gap-1 text-xs">
+                  Size multiplier
+                  <input
+                    type="number"
+                    step="any"
+                    value={row.multiplier}
+                    onChange={(e) => updateRow(row.key, { multiplier: e.target.value }, true)}
+                    placeholder={i === 0 ? "e.g. 1" : "e.g. 2"}
                     className="rounded-md border border-input bg-card px-2 py-1.5 text-sm"
                   />
                 </label>
@@ -250,7 +303,7 @@ export function VariantProductForm({ action, categories, brands }: VariantProduc
                     type="number"
                     step="0.01"
                     value={row.purchaseCost}
-                    onChange={(e) => updateRow(row.key, { purchaseCost: e.target.value })}
+                    onChange={(e) => updateRow(row.key, { purchaseCost: e.target.value }, i === 0)}
                     className="rounded-md border border-input bg-card px-2 py-1.5 text-sm"
                   />
                 </label>
@@ -262,7 +315,7 @@ export function VariantProductForm({ action, categories, brands }: VariantProduc
                     step="0.01"
                     required
                     value={row.sellingPrice}
-                    onChange={(e) => updateRow(row.key, { sellingPrice: e.target.value })}
+                    onChange={(e) => updateRow(row.key, { sellingPrice: e.target.value }, i === 0)}
                     className="rounded-md border border-input bg-card px-2 py-1.5 text-sm"
                   />
                 </label>
@@ -272,7 +325,10 @@ export function VariantProductForm({ action, categories, brands }: VariantProduc
         </div>
         <p className="mt-3 text-xs text-muted-foreground">
           Fill &ldquo;Aerofeel gross price&rdquo; to auto-fill cost/selling price (net ÷ 1.22, then
-          +40% margin) — both stay editable afterward.
+          +40% margin). Or set a &ldquo;Size multiplier&rdquo; on row 1 (e.g. 1) and on other rows
+          (e.g. 2 for double the size) to scale their price and cost proportionally from row 1&rsquo;s
+          own price — same relationship aerofeel uses between their sizes, applied to your price
+          instead of theirs. Every field stays editable afterward either way.
         </p>
       </div>
 
