@@ -4,6 +4,7 @@ import { SiteHeader } from "@/components/nav/site-header";
 import { SiteFooter } from "@/components/nav/site-footer";
 import { ProductCard } from "@/components/product/product-card";
 import { PurchasePanel } from "@/components/product/purchase-panel";
+import { VariantSelector } from "@/components/product/variant-selector";
 import { getProductBySlug } from "@/lib/products/queries";
 import { getAvailabilityLabel } from "@/lib/inventory/rules";
 import { getStoreSettings } from "@/lib/settings/queries";
@@ -90,6 +91,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             >
               {stockLabel}
             </span>
+
+            <VariantSelector variants={product.variants} currentId={product.id} />
 
             <div className="mt-6">
               <PurchasePanel

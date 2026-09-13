@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { Database } from "@/types/database";
+import type { Database, Json } from "@/types/database";
 import { parseAvailabilityStatus, type StockStatus } from "@/lib/inventory/rules";
 
 type Category = Database["public"]["Tables"]["categories"]["Row"];
@@ -29,6 +29,16 @@ export interface ProductDetail extends Product {
   bundle_items: (Database["public"]["Tables"]["product_bundle_items"]["Row"] & {
     component_product: ProductListItem | null;
   })[];
+  variants: ProductVariantOption[];
+}
+
+// A sibling in the same variant_group_id — same filter type, different size/class. Just enough
+// to populate a size selector and jump straight to that sibling's own page.
+export interface ProductVariantOption {
+  id: string;
+  slug: string;
+  selling_price: number;
+  technical_specs: Json;
 }
 
 // `inventory` itself is staff-only under RLS (raw stock counts are operationally sensitive —
@@ -222,6 +232,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail | nu
     { data: compatibility },
     { data: recommendations },
     { data: bundleItems },
+    { data: variantSiblings },
   ] = await Promise.all([
     product.category_id
       ? supabase.from("categories").select("*").eq("id", product.category_id).maybeSingle()
@@ -242,6 +253,14 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail | nu
       .from("product_bundle_items")
       .select(`*, component_product:products!product_bundle_items_component_product_id_fkey(${PRODUCT_LIST_SELECT})`)
       .eq("bundle_product_id", product.id),
+    product.variant_group_id
+      ? supabase
+          .from("products")
+          .select("id, slug, selling_price, technical_specs")
+          .eq("variant_group_id", product.variant_group_id)
+          .eq("is_active", true)
+          .order("selling_price", { ascending: true })
+      : Promise.resolve({ data: null }),
   ]);
 
   const recommendationsWithItems = (recommendations ?? []) as unknown as (Database["public"]["Tables"]["product_recommendations"]["Row"] & {
@@ -268,5 +287,6 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail | nu
       ...b,
       component_product: b.component_product ? toListItem(b.component_product) : null,
     })),
+    variants: (variantSiblings ?? []) as unknown as ProductVariantOption[],
   };
 }

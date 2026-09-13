@@ -76,6 +76,10 @@ export async function createProductVariants(
     });
   }
 
+  // Only rows sharing a real size/class distinction need a group — a lone row (or several rows
+  // that all left size/class blank) has nothing for a selector to switch between.
+  const variantGroupId = rows.length > 1 ? crypto.randomUUID() : null;
+
   const created: { id: string; sku: string; name: string }[] = [];
 
   for (const row of rows) {
@@ -98,6 +102,7 @@ export async function createProductVariants(
       description,
       short_description: shortDescription,
       technical_specs: technicalSpecs,
+      variant_group_id: variantGroupId,
       unit,
       purchase_cost: row.purchaseCost,
       selling_price: row.sellingPrice,

@@ -1422,6 +1422,7 @@ export type Database = {
           technical_specs: Json
           unit: string
           updated_at: string
+          variant_group_id: string | null
           vat_rate: number
           weight_kg: number | null
         }
@@ -1453,6 +1454,7 @@ export type Database = {
           technical_specs?: Json
           unit?: string
           updated_at?: string
+          variant_group_id?: string | null
           vat_rate?: number
           weight_kg?: number | null
         }
@@ -1484,6 +1486,7 @@ export type Database = {
           technical_specs?: Json
           unit?: string
           updated_at?: string
+          variant_group_id?: string | null
           vat_rate?: number
           weight_kg?: number | null
         }
