@@ -1,16 +1,33 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { SiteHeader } from "@/components/nav/site-header";
 import { SiteFooter } from "@/components/nav/site-footer";
 import { ProductCard } from "@/components/product/product-card";
 import { ProductFilterBar } from "@/components/product/product-filter-bar";
+import { HelpMeChoose } from "@/components/product/help-me-choose";
 import {
   getCategoryBySlug,
   getCategorySubtreeIds,
   getProductsByCategoryId,
   getSpecFacets,
 } from "@/lib/products/queries";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const result = await getCategoryBySlug(slug);
+  if (!result) return {};
+  const { category } = result;
+  return {
+    title: category.seo_title ?? category.name,
+    description: category.meta_description ?? category.description ?? undefined,
+  };
+}
 
 export default async function CategoryPage({
   params,
@@ -24,10 +41,14 @@ export default async function CategoryPage({
     use?: string;
     filterType?: string;
     filterClass?: string;
+    samplingType?: string;
+    investigation?: string;
+    application?: string;
   }>;
 }) {
   const { slug } = await params;
-  const { inStock, size, micron, use, filterType, filterClass } = await searchParams;
+  const { inStock, size, micron, use, filterType, filterClass, samplingType, investigation, application } =
+    await searchParams;
 
   const result = await getCategoryBySlug(slug);
   if (!result) notFound();
@@ -47,6 +68,9 @@ export default async function CategoryPage({
     use,
     filterType,
     filterClass,
+    samplingType,
+    investigation,
+    application,
   });
 
   return (
@@ -67,9 +91,30 @@ export default async function CategoryPage({
           ))}
         </nav>
 
-        <h1 className="text-3xl font-medium">{category.name}</h1>
-        {category.description && (
-          <p className="mt-2 max-w-2xl text-muted-foreground">{category.description}</p>
+        {category.slug === "sampling-kits" ? (
+          <section className="-mt-4 mb-10 rounded-3xl bg-gradient-to-br from-[#0a1428] via-[#132a4d] to-[#1c3a63] px-6 py-16 text-center text-white sm:py-20">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/70">ECT Marine Store</p>
+            <h1 className="mx-auto mt-2 max-w-2xl text-3xl font-medium sm:text-5xl">Sampling Kits for Superyachts</h1>
+            <p className="mx-auto mt-3 max-w-xl text-white/85">
+              Professional sampling solutions for water, hygiene, HVAC and environmental investigations.
+            </p>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              <a
+                href="#products"
+                className="rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition hover:shadow-md"
+              >
+                Explore Sampling Kits
+              </a>
+              <HelpMeChoose products={allProducts} />
+            </div>
+          </section>
+        ) : (
+          <>
+            <h1 className="text-3xl font-medium">{category.name}</h1>
+            {category.description && (
+              <p className="mt-2 max-w-2xl text-muted-foreground">{category.description}</p>
+            )}
+          </>
         )}
 
         {children.length > 0 && (
@@ -115,7 +160,7 @@ export default async function CategoryPage({
 
         {allProducts.length > 0 && (
           <>
-            <div className="mt-10 flex items-center justify-between">
+            <div id="products" className="mt-10 flex items-center justify-between scroll-mt-6">
               <h2 className="text-xl font-medium">Products</h2>
               <Link
                 href={inStock === "1" ? `/categories/${slug}` : `/categories/${slug}?inStock=1`}

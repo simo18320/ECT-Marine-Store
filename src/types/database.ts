@@ -261,8 +261,10 @@ export type Database = {
           description: string | null
           id: string
           image_url: string | null
+          meta_description: string | null
           name: string
           parent_id: string | null
+          seo_title: string | null
           slug: string
           sort_order: number
         }
@@ -271,8 +273,10 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
+          meta_description?: string | null
           name: string
           parent_id?: string | null
+          seo_title?: string | null
           slug: string
           sort_order?: number
         }
@@ -281,8 +285,10 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
+          meta_description?: string | null
           name?: string
           parent_id?: string | null
+          seo_title?: string | null
           slug?: string
           sort_order?: number
         }
@@ -811,6 +817,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      laboratories: {
+        Row: {
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+        }
+        Insert: {
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+        }
+        Update: {
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+        }
+        Relationships: []
       }
       logistics_quotes: {
         Row: {
@@ -2185,38 +2218,156 @@ export type Database = {
       }
       water_analysis: {
         Row: {
+          collected_by: string | null
+          comments: string | null
           created_at: string
+          equipment_id: string | null
+          free_chlorine_mg_l: number | null
           id: string
           lab_report_url: string | null
+          laboratory_id: string | null
           parameters: Json
+          ph: number | null
+          product_id: string | null
+          reason_for_sampling: string | null
           sample_point: string | null
           sampled_at: string
+          status: string
+          vessel_imo: string | null
+          water_temperature_c: number | null
           yacht_id: string
         }
         Insert: {
+          collected_by?: string | null
+          comments?: string | null
           created_at?: string
+          equipment_id?: string | null
+          free_chlorine_mg_l?: number | null
           id?: string
           lab_report_url?: string | null
+          laboratory_id?: string | null
           parameters?: Json
+          ph?: number | null
+          product_id?: string | null
+          reason_for_sampling?: string | null
           sample_point?: string | null
           sampled_at?: string
+          status?: string
+          vessel_imo?: string | null
+          water_temperature_c?: number | null
           yacht_id: string
         }
         Update: {
+          collected_by?: string | null
+          comments?: string | null
           created_at?: string
+          equipment_id?: string | null
+          free_chlorine_mg_l?: number | null
           id?: string
           lab_report_url?: string | null
+          laboratory_id?: string | null
           parameters?: Json
+          ph?: number | null
+          product_id?: string | null
+          reason_for_sampling?: string | null
           sample_point?: string | null
           sampled_at?: string
+          status?: string
+          vessel_imo?: string | null
+          water_temperature_c?: number | null
           yacht_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "water_analysis_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_analysis_laboratory_id_fkey"
+            columns: ["laboratory_id"]
+            isOneToOne: false
+            referencedRelation: "laboratories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_analysis_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "water_analysis_yacht_id_fkey"
             columns: ["yacht_id"]
             isOneToOne: false
             referencedRelation: "yachts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_analysis_events: {
+        Row: {
+          actor: string | null
+          event_type: string
+          id: string
+          notes: string | null
+          occurred_at: string
+          water_analysis_id: string
+        }
+        Insert: {
+          actor?: string | null
+          event_type: string
+          id?: string
+          notes?: string | null
+          occurred_at?: string
+          water_analysis_id: string
+        }
+        Update: {
+          actor?: string | null
+          event_type?: string
+          id?: string
+          notes?: string | null
+          occurred_at?: string
+          water_analysis_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_analysis_events_water_analysis_id_fkey"
+            columns: ["water_analysis_id"]
+            isOneToOne: false
+            referencedRelation: "water_analysis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      water_analysis_photos: {
+        Row: {
+          created_at: string
+          id: string
+          url: string
+          water_analysis_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          url: string
+          water_analysis_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          url?: string
+          water_analysis_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_analysis_photos_water_analysis_id_fkey"
+            columns: ["water_analysis_id"]
+            isOneToOne: false
+            referencedRelation: "water_analysis"
             referencedColumns: ["id"]
           },
         ]

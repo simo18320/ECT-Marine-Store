@@ -8,6 +8,9 @@ interface ProductFilterBarProps {
   uses: string[];
   filterTypes: string[];
   filterClasses: string[];
+  samplingTypes: string[];
+  investigations: string[];
+  applications: string[];
 }
 
 const FILTERS: { param: string; label: string; key: keyof ProductFilterBarProps; formatOption?: (v: string) => string }[] = [
@@ -16,6 +19,9 @@ const FILTERS: { param: string; label: string; key: keyof ProductFilterBarProps;
   { param: "use", label: "All uses", key: "uses" },
   { param: "filterType", label: "All filter types", key: "filterTypes" },
   { param: "filterClass", label: "All filter classes", key: "filterClasses" },
+  { param: "samplingType", label: "All sampling types", key: "samplingTypes" },
+  { param: "investigation", label: "All investigations", key: "investigations" },
+  { param: "application", label: "All applications", key: "applications" },
 ];
 
 export function ProductFilterBar(props: ProductFilterBarProps) {

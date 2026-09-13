@@ -5,6 +5,7 @@ import { SiteFooter } from "@/components/nav/site-footer";
 import { ProductCard } from "@/components/product/product-card";
 import { PurchasePanel } from "@/components/product/purchase-panel";
 import { VariantSelector } from "@/components/product/variant-selector";
+import { SamplingKitDetails } from "@/components/product/sampling-kit-details";
 import { getProductBySlug } from "@/lib/products/queries";
 import { getAvailabilityLabel } from "@/lib/inventory/rules";
 import { getStoreSettings } from "@/lib/settings/queries";
@@ -16,7 +17,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   if (!product) notFound();
 
   const stockStatus = product.availability_status;
-  const specs = Object.entries((product.technical_specs as Record<string, unknown>) ?? {});
+  const rawSpecs = (product.technical_specs as Record<string, unknown>) ?? {};
+  const isSamplingKit = Array.isArray(rawSpecs.contents) && rawSpecs.contents.length > 0;
+  const specs = Object.entries(rawSpecs);
 
   const settings = await getStoreSettings();
   const stockLabel = getAvailabilityLabel(
@@ -143,25 +146,31 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           </div>
         </div>
 
-        {specs.length > 0 && (
-          <div className="mt-12">
-            <h2 className="mb-3 text-xl font-medium">Technical specifications</h2>
-            <dl className="grid grid-cols-1 gap-x-8 gap-y-2 rounded-2xl border border-border bg-card p-5 sm:grid-cols-2">
-              {specs.map(([key, val]) => (
-                <div key={key} className="flex justify-between border-b border-border/60 py-1 text-sm">
-                  <dt className="capitalize text-muted-foreground">{key.replace(/_/g, " ")}</dt>
-                  <dd className="font-medium">{String(val)}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-        )}
+        {isSamplingKit ? (
+          <SamplingKitDetails productId={product.id} specs={rawSpecs} whatIsIt={product.description} />
+        ) : (
+          <>
+            {specs.length > 0 && (
+              <div className="mt-12">
+                <h2 className="mb-3 text-xl font-medium">Technical specifications</h2>
+                <dl className="grid grid-cols-1 gap-x-8 gap-y-2 rounded-2xl border border-border bg-card p-5 sm:grid-cols-2">
+                  {specs.map(([key, val]) => (
+                    <div key={key} className="flex justify-between border-b border-border/60 py-1 text-sm">
+                      <dt className="capitalize text-muted-foreground">{key.replace(/_/g, " ")}</dt>
+                      <dd className="font-medium">{String(val)}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            )}
 
-        {product.description && (
-          <div className="mt-10 max-w-3xl">
-            <h2 className="mb-2 text-xl font-medium">Description</h2>
-            <p className="text-muted-foreground">{product.description}</p>
-          </div>
+            {product.description && (
+              <div className="mt-10 max-w-3xl">
+                <h2 className="mb-2 text-xl font-medium">Description</h2>
+                <p className="text-muted-foreground">{product.description}</p>
+              </div>
+            )}
+          </>
         )}
 
         {product.documents.length > 0 && (

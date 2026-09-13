@@ -133,6 +133,9 @@ export interface ProductFilters {
   use?: string;
   filterType?: string;
   filterClass?: string;
+  samplingType?: string;
+  investigation?: string;
+  application?: string;
 }
 
 export interface ProductSpecFacets {
@@ -141,6 +144,23 @@ export interface ProductSpecFacets {
   uses: string[];
   filterTypes: string[];
   filterClasses: string[];
+  samplingTypes: string[];
+  investigations: string[];
+  applications: string[];
+}
+
+// A spec value that names one option (size, filter_class, sampling_type, ...) vs. one that
+// names several at once (a sampling kit covers multiple investigations/applications) — both
+// need to feed the same faceting and filtering logic without the single-value facets having to
+// know arrays exist.
+function addSpecValues(set: Set<string>, raw: unknown) {
+  if (typeof raw === "string") set.add(raw);
+  else if (Array.isArray(raw)) for (const v of raw) if (typeof v === "string") set.add(v);
+}
+function specMatches(raw: unknown, wanted: string): boolean {
+  if (typeof raw === "string") return raw === wanted;
+  if (Array.isArray(raw)) return raw.includes(wanted);
+  return false;
 }
 
 function facetsFromSpecsList(specsList: Json[]): ProductSpecFacets {
@@ -149,6 +169,9 @@ function facetsFromSpecsList(specsList: Json[]): ProductSpecFacets {
   const uses = new Set<string>();
   const filterTypes = new Set<string>();
   const filterClasses = new Set<string>();
+  const samplingTypes = new Set<string>();
+  const investigations = new Set<string>();
+  const applications = new Set<string>();
 
   for (const raw of specsList) {
     const specs = (raw as Record<string, unknown>) ?? {};
@@ -157,6 +180,9 @@ function facetsFromSpecsList(specsList: Json[]): ProductSpecFacets {
     if (typeof specs.use === "string") uses.add(specs.use);
     if (typeof specs.filter_type === "string") filterTypes.add(specs.filter_type);
     if (typeof specs.filter_class === "string") filterClasses.add(specs.filter_class);
+    if (typeof specs.sampling_type === "string") samplingTypes.add(specs.sampling_type);
+    addSpecValues(investigations, specs.investigation);
+    addSpecValues(applications, specs.application);
   }
 
   return {
@@ -165,6 +191,9 @@ function facetsFromSpecsList(specsList: Json[]): ProductSpecFacets {
     uses: [...uses].sort(),
     filterTypes: [...filterTypes].sort(),
     filterClasses: [...filterClasses].sort(),
+    samplingTypes: [...samplingTypes].sort(),
+    investigations: [...investigations].sort(),
+    applications: [...applications].sort(),
   };
 }
 
@@ -186,6 +215,9 @@ function applySpecFilters(items: ProductListItem[], filters: ProductFilters): Pr
     if (filters.use && specs.use !== filters.use) return false;
     if (filters.filterType && specs.filter_type !== filters.filterType) return false;
     if (filters.filterClass && specs.filter_class !== filters.filterClass) return false;
+    if (filters.samplingType && specs.sampling_type !== filters.samplingType) return false;
+    if (filters.investigation && !specMatches(specs.investigation, filters.investigation)) return false;
+    if (filters.application && !specMatches(specs.application, filters.application)) return false;
     return true;
   });
 }

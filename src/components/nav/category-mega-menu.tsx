@@ -21,6 +21,9 @@ function facetGroups(facets: ProductSpecFacets | undefined): FilterGroup[] {
     { label: "Use", param: "use", values: facets.uses },
     { label: "Filter type", param: "filterType", values: facets.filterTypes },
     { label: "Filter class", param: "filterClass", values: facets.filterClasses },
+    { label: "Sampling type", param: "samplingType", values: facets.samplingTypes },
+    { label: "Investigation", param: "investigation", values: facets.investigations },
+    { label: "Application", param: "application", values: facets.applications },
   ];
   return groups.filter((group) => group.values.length > 0);
 }
