@@ -2,9 +2,36 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import type { CategoryNode } from "@/lib/products/queries";
+import type { CategoryNode, ProductSpecFacets } from "@/lib/products/queries";
 
-export function CategoryMegaMenu({ categories }: { categories: CategoryNode[] }) {
+interface FilterGroup {
+  label: string;
+  param: string;
+  values: string[];
+  formatValue?: (v: string) => string;
+}
+
+// Same five facets the category-page filter bar understands — jumping here with e.g.
+// ?micron=20 lands on a pre-filtered product list rather than a category tree to drill through.
+function facetGroups(facets: ProductSpecFacets | undefined): FilterGroup[] {
+  if (!facets) return [];
+  const groups: FilterGroup[] = [
+    { label: "Size", param: "size", values: facets.sizes },
+    { label: "Micron rating", param: "micron", values: facets.microns, formatValue: (v: string) => `${v} micron` },
+    { label: "Use", param: "use", values: facets.uses },
+    { label: "Filter type", param: "filterType", values: facets.filterTypes },
+    { label: "Filter class", param: "filterClass", values: facets.filterClasses },
+  ];
+  return groups.filter((group) => group.values.length > 0);
+}
+
+export function CategoryMegaMenu({
+  categories,
+  facetsBySlug,
+}: {
+  categories: CategoryNode[];
+  facetsBySlug: Record<string, ProductSpecFacets>;
+}) {
   const [openSlug, setOpenSlug] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -26,10 +53,10 @@ export function CategoryMegaMenu({ categories }: { categories: CategoryNode[] })
   return (
     <div ref={containerRef} className="hidden gap-6 text-sm font-medium text-muted-foreground md:flex">
       {categories.map((category) => {
-        const hasChildren = category.children.length > 0;
+        const groups = facetGroups(facetsBySlug[category.slug]);
         const isOpen = openSlug === category.slug;
 
-        if (!hasChildren) {
+        if (groups.length === 0) {
           return (
             <Link key={category.id} href={`/categories/${category.slug}`} className="hover:text-foreground">
               {category.name}
@@ -60,29 +87,23 @@ export function CategoryMegaMenu({ categories }: { categories: CategoryNode[] })
                 >
                   Shop all {category.name} →
                 </Link>
-                {category.children.map((sub) => (
-                  <div key={sub.id} className="min-w-32">
-                    <Link
-                      href={`/categories/${sub.slug}`}
-                      onClick={() => setOpenSlug(null)}
-                      className="mb-2 block text-xs font-semibold uppercase tracking-wide text-foreground hover:text-primary"
-                    >
-                      {sub.name}
-                    </Link>
+                {groups.map((group) => (
+                  <div key={group.param} className="min-w-32">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground">
+                      {group.label}
+                    </p>
                     <ul className="flex flex-col gap-1.5">
-                      {sub.children.length > 0
-                        ? sub.children.map((leaf) => (
-                            <li key={leaf.id}>
-                              <Link
-                                href={`/categories/${leaf.slug}`}
-                                onClick={() => setOpenSlug(null)}
-                                className="text-muted-foreground hover:text-primary"
-                              >
-                                {leaf.name}
-                              </Link>
-                            </li>
-                          ))
-                        : null}
+                      {group.values.map((value) => (
+                        <li key={value}>
+                          <Link
+                            href={`/categories/${category.slug}?${group.param}=${encodeURIComponent(value)}`}
+                            onClick={() => setOpenSlug(null)}
+                            className="text-muted-foreground hover:text-primary"
+                          >
+                            {group.formatValue ? group.formatValue(value) : value}
+                          </Link>
+                        </li>
+                      ))}
                     </ul>
                   </div>
                 ))}

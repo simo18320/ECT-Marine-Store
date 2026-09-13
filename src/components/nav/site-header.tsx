@@ -5,7 +5,7 @@ import { SearchBox } from "./search-box";
 import { MobileNav } from "./mobile-nav";
 import { CategoryMegaMenu } from "./category-mega-menu";
 import { CartIcon } from "@/components/cart/cart-icon";
-import { getCategoryTree } from "@/lib/products/queries";
+import { getCategoryTree, getTopLevelCategoryFacets } from "@/lib/products/queries";
 
 const EXTRA_LINKS = [
   { href: "/find-product", label: "Find the right product" },
@@ -14,7 +14,7 @@ const EXTRA_LINKS = [
 ];
 
 export async function SiteHeader() {
-  const categories = await getCategoryTree();
+  const [categories, facetsBySlug] = await Promise.all([getCategoryTree(), getTopLevelCategoryFacets()]);
   const mobileLinks = [
     ...categories.map((c) => ({ href: `/categories/${c.slug}`, label: c.name })),
     ...EXTRA_LINKS,
@@ -33,7 +33,7 @@ export async function SiteHeader() {
             className="h-7 w-auto sm:h-8"
           />
         </Link>
-        <CategoryMegaMenu categories={categories} />
+        <CategoryMegaMenu categories={categories} facetsBySlug={facetsBySlug} />
         <nav className="hidden gap-6 text-sm font-medium text-muted-foreground md:flex">
           {EXTRA_LINKS.map((link) => (
             <Link key={link.href} href={link.href} className="hover:text-foreground">

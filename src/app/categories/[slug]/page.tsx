@@ -5,26 +5,49 @@ import { SiteHeader } from "@/components/nav/site-header";
 import { SiteFooter } from "@/components/nav/site-footer";
 import { ProductCard } from "@/components/product/product-card";
 import { ProductFilterBar } from "@/components/product/product-filter-bar";
-import { getCategoryBySlug, getProductsByCategoryId, getSpecFacets } from "@/lib/products/queries";
+import {
+  getCategoryBySlug,
+  getCategorySubtreeIds,
+  getProductsByCategoryId,
+  getSpecFacets,
+} from "@/lib/products/queries";
 
 export default async function CategoryPage({
   params,
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ inStock?: string; size?: string; micron?: string; use?: string; filterType?: string }>;
+  searchParams: Promise<{
+    inStock?: string;
+    size?: string;
+    micron?: string;
+    use?: string;
+    filterType?: string;
+    filterClass?: string;
+  }>;
 }) {
   const { slug } = await params;
-  const { inStock, size, micron, use, filterType } = await searchParams;
+  const { inStock, size, micron, use, filterType, filterClass } = await searchParams;
 
   const result = await getCategoryBySlug(slug);
   if (!result) notFound();
   const { category, children, breadcrumb } = result;
 
+  // Every real product lives on a leaf category several levels down, so "this category's
+  // products" has to mean the whole subtree — a branch page like Water would otherwise always
+  // come back empty even though it clearly has products underneath it.
+  const subtreeIds = await getCategorySubtreeIds(category.id);
   const inStockOnly = inStock === "1";
-  const allProducts = await getProductsByCategoryId(category.id, { inStockOnly });
+  const allProducts = await getProductsByCategoryId(subtreeIds, { inStockOnly });
   const facets = getSpecFacets(allProducts);
-  const products = await getProductsByCategoryId(category.id, { inStockOnly, size, micron, use, filterType });
+  const products = await getProductsByCategoryId(subtreeIds, {
+    inStockOnly,
+    size,
+    micron,
+    use,
+    filterType,
+    filterClass,
+  });
 
   return (
     <>

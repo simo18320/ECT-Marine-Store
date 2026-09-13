@@ -52,7 +52,7 @@ export default async function HomePage() {
       <SiteHeader />
 
       <main className="flex flex-1 flex-col">
-        <section className="relative flex flex-col items-center gap-8 overflow-hidden px-6 py-28 text-center sm:py-44">
+        <section className="relative flex flex-1 flex-col items-center justify-center gap-5 overflow-hidden px-6 py-10 text-center sm:gap-6 sm:py-14">
           <Image
             src="/images/hero-yacht.jpg"
             alt=""
@@ -69,49 +69,43 @@ export default async function HomePage() {
                 "linear-gradient(180deg, rgba(10,20,40,0.6) 0%, rgba(10,20,40,0.72) 55%, rgba(10,20,40,0.85) 100%)",
             }}
           />
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/80">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/80 sm:text-sm">
             Eco Cleaning Technologies
           </p>
-          <h1 className="max-w-3xl text-5xl font-medium text-balance text-white sm:text-7xl">
+          <h1 className="max-w-3xl text-3xl font-medium text-balance text-white sm:text-5xl lg:text-6xl">
             Hard to find.
             <br />
             <span className="italic">Easy with ECT.</span>
           </h1>
-          <p className="max-w-xl text-base text-white/85 sm:text-lg">
+          <p className="max-w-xl text-sm text-white/85 sm:text-base">
             The spare part you&rsquo;re looking for isn&rsquo;t a problem. We&rsquo;ll find it for you.
           </p>
-          <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
+          <div className="flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/find-product"
-              className="rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-sm transition hover:shadow-md"
+              className="rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition hover:shadow-md"
             >
               Find the right product
             </Link>
             <Link
               href="/my-yacht"
-              className="rounded-full border border-white/40 bg-white/95 px-6 py-3 text-sm font-medium text-foreground shadow-sm transition hover:bg-white"
+              className="rounded-full border border-white/40 bg-white/95 px-6 py-2.5 text-sm font-medium text-foreground shadow-sm transition hover:bg-white"
             >
               Book a water or air analysis
             </Link>
           </div>
-        </section>
 
-        <section className="mx-auto w-full max-w-6xl px-6 pb-24">
-          <div className="mb-8 max-w-xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">Explore the range</p>
-            <h2 className="mt-2 text-2xl font-medium sm:text-3xl">Everything your yacht&rsquo;s systems need</h2>
-          </div>
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-2 grid w-full max-w-5xl grid-cols-2 gap-3 sm:mt-4 lg:grid-cols-4">
             {categories.map((category) => (
               <Link
                 key={category.id}
                 href={`/categories/${category.slug}`}
-                className="group relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-primary/60 hover:shadow-lg"
+                className="group flex items-center gap-3 rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-left backdrop-blur-sm transition duration-200 hover:border-white/40 hover:bg-white/20"
               >
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 transition-colors group-hover:bg-primary/15">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15">
                   <svg
                     viewBox="0 0 24 24"
-                    className="h-6 w-6 text-primary"
+                    className="h-5 w-5 text-white"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="1.5"
@@ -119,17 +113,13 @@ export default async function HomePage() {
                     {CATEGORY_ICON[category.slug]}
                   </svg>
                 </span>
-                <div>
-                  <span className="font-medium">{category.name}</span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-medium text-white">{category.name}</span>
                   {CATEGORY_BLURB[category.slug] && (
-                    <p className="mt-1.5 text-sm text-muted-foreground">{CATEGORY_BLURB[category.slug]}</p>
+                    <span className="hidden truncate text-xs text-white/70 lg:block">
+                      {CATEGORY_BLURB[category.slug]}
+                    </span>
                   )}
-                </div>
-                <span className="mt-auto flex items-center gap-1 text-sm font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100">
-                  Shop now
-                  <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M2.5 6h7m0 0L6 2.5M9.5 6 6 9.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
                 </span>
               </Link>
             ))}

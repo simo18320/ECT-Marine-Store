@@ -132,6 +132,7 @@ export interface ProductFilters {
   micron?: string;
   use?: string;
   filterType?: string;
+  filterClass?: string;
 }
 
 export interface ProductSpecFacets {
@@ -139,23 +140,23 @@ export interface ProductSpecFacets {
   microns: string[];
   uses: string[];
   filterTypes: string[];
+  filterClasses: string[];
 }
 
-/** Distinct values actually present in this result set, for populating the storefront filter
- * dropdowns — computed from the same list the page already fetched, before the four facet
- * filters are applied, so a dropdown never offers an option that would zero out the results. */
-export function getSpecFacets(items: ProductListItem[]): ProductSpecFacets {
+function facetsFromSpecsList(specsList: Json[]): ProductSpecFacets {
   const sizes = new Set<string>();
   const microns = new Set<string>();
   const uses = new Set<string>();
   const filterTypes = new Set<string>();
+  const filterClasses = new Set<string>();
 
-  for (const item of items) {
-    const specs = (item.technical_specs as Record<string, unknown>) ?? {};
+  for (const raw of specsList) {
+    const specs = (raw as Record<string, unknown>) ?? {};
     if (typeof specs.size === "string") sizes.add(specs.size);
     if (specs.micron_rating != null) microns.add(String(specs.micron_rating));
     if (typeof specs.use === "string") uses.add(specs.use);
     if (typeof specs.filter_type === "string") filterTypes.add(specs.filter_type);
+    if (typeof specs.filter_class === "string") filterClasses.add(specs.filter_class);
   }
 
   return {
@@ -163,12 +164,20 @@ export function getSpecFacets(items: ProductListItem[]): ProductSpecFacets {
     microns: [...microns].sort((a, b) => Number(a) - Number(b)),
     uses: [...uses].sort(),
     filterTypes: [...filterTypes].sort(),
+    filterClasses: [...filterClasses].sort(),
   };
+}
+
+/** Distinct values actually present in this result set, for populating the storefront filter
+ * dropdowns — computed from the same list the page already fetched, before the facet filters
+ * are applied, so a dropdown never offers an option that would zero out the results. */
+export function getSpecFacets(items: ProductListItem[]): ProductSpecFacets {
+  return facetsFromSpecsList(items.map((item) => item.technical_specs));
 }
 
 // Same in-memory filtering approach as inStockOnly below — the catalogue is small enough that
 // fetching a category/search result set and filtering in JS is simpler and safer than building
-// dynamic JSONB-path query strings for four optional, independent facets.
+// dynamic JSONB-path query strings for these optional, independent facets.
 function applySpecFilters(items: ProductListItem[], filters: ProductFilters): ProductListItem[] {
   return items.filter((p) => {
     const specs = (p.technical_specs as Record<string, unknown>) ?? {};
@@ -176,27 +185,75 @@ function applySpecFilters(items: ProductListItem[], filters: ProductFilters): Pr
     if (filters.micron && String(specs.micron_rating) !== filters.micron) return false;
     if (filters.use && specs.use !== filters.use) return false;
     if (filters.filterType && specs.filter_type !== filters.filterType) return false;
+    if (filters.filterClass && specs.filter_class !== filters.filterClass) return false;
     return true;
   });
 }
 
+// A branch category (Water, Air, ...) has no products of its own — every real product sits on a
+// leaf several levels down — so browsing or filtering "by category" has to mean the whole subtree,
+// not an exact category_id match, or a branch page/mega-menu shortcut would always come back empty.
+export async function getCategorySubtreeIds(categoryId: string): Promise<string[]> {
+  const supabase = await createClient();
+  const { data: categories } = await supabase.from("categories").select("id, parent_id");
+  if (!categories) return [categoryId];
+
+  const childrenByParent = new Map<string, string[]>();
+  for (const c of categories) {
+    if (c.parent_id) childrenByParent.set(c.parent_id, [...(childrenByParent.get(c.parent_id) ?? []), c.id]);
+  }
+  function collect(id: string): string[] {
+    return [id, ...(childrenByParent.get(id) ?? []).flatMap(collect)];
+  }
+  return collect(categoryId);
+}
+
 export async function getProductsByCategoryId(
-  categoryId: string,
+  categoryId: string | string[],
   filters: ProductFilters = {},
 ): Promise<ProductListItem[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("products")
-    .select(PRODUCT_LIST_SELECT)
-    .eq("category_id", categoryId)
-    .eq("is_active", true)
-    .order("name", { ascending: true });
+  let query = supabase.from("products").select(PRODUCT_LIST_SELECT).eq("is_active", true);
+  query = Array.isArray(categoryId) ? query.in("category_id", categoryId) : query.eq("category_id", categoryId);
+  const { data, error } = await query.order("name", { ascending: true });
 
   if (error || !data) return [];
 
   let items = (data as unknown as RawProductListRow[]).map(toListItem);
   if (filters.inStockOnly) items = items.filter((p) => p.availability_status !== "out_of_stock");
   return applySpecFilters(items, filters);
+}
+
+// Per top-level category (Water, Air, ...), the distinct filter values found anywhere in its
+// subtree — powers the mega-menu's filter shortcuts (e.g. "20 micron" under Water) so picking one
+// jumps straight to matching products instead of drilling through a category tree first.
+export async function getTopLevelCategoryFacets(): Promise<Record<string, ProductSpecFacets>> {
+  const supabase = await createClient();
+  const [{ data: categories }, { data: products }] = await Promise.all([
+    supabase.from("categories").select("id, slug, parent_id"),
+    supabase.from("products").select("category_id, technical_specs").eq("is_active", true),
+  ]);
+  if (!categories) return {};
+
+  const categoryById = new Map(categories.map((c) => [c.id, c]));
+  function topLevelSlugFor(categoryId: string | null): string | null {
+    let current = categoryId ? categoryById.get(categoryId) : undefined;
+    while (current?.parent_id) current = categoryById.get(current.parent_id);
+    return current?.slug ?? null;
+  }
+
+  const buckets = new Map<string, Json[]>();
+  for (const p of products ?? []) {
+    const topSlug = topLevelSlugFor(p.category_id);
+    if (!topSlug) continue;
+    buckets.set(topSlug, [...(buckets.get(topSlug) ?? []), p.technical_specs]);
+  }
+
+  const result: Record<string, ProductSpecFacets> = {};
+  for (const [slug, specsList] of buckets) {
+    result[slug] = facetsFromSpecsList(specsList);
+  }
+  return result;
 }
 
 export async function searchProducts(

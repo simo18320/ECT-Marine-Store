@@ -7,6 +7,7 @@ interface ProductFilterBarProps {
   microns: string[];
   uses: string[];
   filterTypes: string[];
+  filterClasses: string[];
 }
 
 const FILTERS: { param: string; label: string; key: keyof ProductFilterBarProps; formatOption?: (v: string) => string }[] = [
@@ -14,6 +15,7 @@ const FILTERS: { param: string; label: string; key: keyof ProductFilterBarProps;
   { param: "micron", label: "All micron ratings", key: "microns", formatOption: (v) => `${v} micron` },
   { param: "use", label: "All uses", key: "uses" },
   { param: "filterType", label: "All filter types", key: "filterTypes" },
+  { param: "filterClass", label: "All filter classes", key: "filterClasses" },
 ];
 
 export function ProductFilterBar(props: ProductFilterBarProps) {
