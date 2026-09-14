@@ -51,6 +51,18 @@ export async function getFilterProductForPurchase(productId: string): Promise<Fi
  * select from becoming a dump of the whole catalogue (e.g. sampling kits aren't "filters"). */
 export async function listFilterableProducts() {
   const supabase = await createClient();
-  const { data } = await supabase.from("products").select("id, sku, name").eq("is_active", true).order("name");
+
+  const { data: filtration } = await supabase.from("categories").select("id").eq("slug", "water-filtration").maybeSingle();
+  if (!filtration) return [];
+
+  const { data: children } = await supabase.from("categories").select("id").eq("parent_id", filtration.id);
+  const categoryIds = [filtration.id, ...(children ?? []).map((c) => c.id)];
+
+  const { data } = await supabase
+    .from("products")
+    .select("id, sku, name")
+    .eq("is_active", true)
+    .in("category_id", categoryIds)
+    .order("name");
   return data ?? [];
 }
