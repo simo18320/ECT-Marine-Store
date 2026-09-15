@@ -1,7 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import { getProblem } from "./problems";
 import { rankCandidates, type MatchTier } from "./rules";
-import { PRODUCT_LIST_SELECT, toListItem, type ProductListItem, type RawProductListRow } from "@/lib/products/queries";
+import {
+  PRODUCT_LIST_SELECT,
+  toListItem,
+  getCategorySubtreeIds,
+  type ProductListItem,
+  type RawProductListRow,
+} from "@/lib/products/queries";
 
 export interface RecommendationResult {
   product: ProductListItem;
@@ -102,4 +108,42 @@ export async function getRecommendationsForProblem(
   );
 
   return ranked.slice(0, 8);
+}
+
+export interface SuggestedProductType {
+  category: { id: string; name: string; slug: string };
+  products: ProductListItem[];
+}
+
+/**
+ * Category-level "what type of product handles this" suggestion for a problem — independent of
+ * product_compatibility data, which only exists for some products so far. Never claims verified
+ * compatibility (that's what getRecommendationsForProblem is for); it's just a starting point for
+ * browsing, labelled as such wherever it's rendered.
+ */
+export async function getSuggestedProductTypes(problemId: string): Promise<SuggestedProductType[]> {
+  const problem = getProblem(problemId);
+  if (!problem) return [];
+
+  const supabase = await createClient();
+  const { data: categories } = await supabase
+    .from("categories")
+    .select("id, name, slug")
+    .in("slug", problem.suggestedCategorySlugs);
+  if (!categories) return [];
+
+  const results: SuggestedProductType[] = [];
+  for (const category of categories) {
+    const subtreeIds = await getCategorySubtreeIds(category.id);
+    const { data } = await supabase
+      .from("products")
+      .select(PRODUCT_LIST_SELECT)
+      .eq("is_active", true)
+      .in("category_id", subtreeIds)
+      .order("name")
+      .limit(4);
+    const products = ((data ?? []) as unknown as RawProductListRow[]).map(toListItem);
+    if (products.length > 0) results.push({ category, products });
+  }
+  return results;
 }

@@ -13,6 +13,11 @@ export interface ProblemDefinition {
   /** Free-text keywords used by the AI assistant (ai-engine.md §1) to trigger this same
    * deterministic engine from a customer's chat message — never an independent product choice. */
   keywords: string[];
+  /** Category slugs (from the storefront's own category tree) that typically address this
+   * problem — shown as a "product types worth browsing" suggestion, distinct from and never a
+   * substitute for the verified-compatible results below it: it's a starting point for browsing,
+   * not a compatibility claim, since product_compatibility rows don't exist for every product yet. */
+  suggestedCategorySlugs: string[];
 }
 
 export const PROBLEMS: ProblemDefinition[] = [
@@ -22,6 +27,7 @@ export const PROBLEMS: ProblemDefinition[] = [
     description: "Sand, silt or rust particles in the fresh water supply.",
     equipmentTypeNames: ["Filter Housing"],
     keywords: ["sediment", "cloudy water", "sandy water", "silt", "rust in the water", "gritty water"],
+    suggestedCategorySlugs: ["sediment-filters", "pp-cartridges"],
   },
   {
     id: "bad_taste_smell",
@@ -29,6 +35,7 @@ export const PROBLEMS: ProblemDefinition[] = [
     description: "Chlorine taste, musty odour, or generally unpleasant-tasting water.",
     equipmentTypeNames: ["Filter Housing"],
     keywords: ["bad taste", "tastes bad", "smells bad", "musty", "chlorine taste", "bad smell", "odd smell"],
+    suggestedCategorySlugs: ["carbon-block", "gac"],
   },
   {
     id: "microbiological_risk",
@@ -36,6 +43,7 @@ export const PROBLEMS: ProblemDefinition[] = [
     description: "Bacterial or Legionella risk in the water system.",
     equipmentTypeNames: ["UV System"],
     keywords: ["legionella", "bacteria", "bacterial", "microbiological"],
+    suggestedCategorySlugs: ["uv-systems"],
   },
   {
     id: "filtration_upgrade",
@@ -43,6 +51,7 @@ export const PROBLEMS: ProblemDefinition[] = [
     description: "Improving overall water filtration or desalination output.",
     equipmentTypeNames: ["Filter Housing", "RO Membrane Housing", "Desalination Unit"],
     keywords: ["upgrade my filtration", "improve water filtration", "desalination output", "more fresh water"],
+    suggestedCategorySlugs: ["water-filter-housings", "ro-membranes"],
   },
   {
     id: "hvac_air_quality",
@@ -50,6 +59,7 @@ export const PROBLEMS: ProblemDefinition[] = [
     description: "Stale or poor-quality air from the HVAC system.",
     equipmentTypeNames: ["HVAC Unit"],
     keywords: ["stale air", "hvac", "air conditioning smell", "poor air quality"],
+    suggestedCategorySlugs: ["hvac-filters"],
   },
   {
     id: "voc_pm",
@@ -57,6 +67,7 @@ export const PROBLEMS: ProblemDefinition[] = [
     description: "Airborne chemical odours (VOCs) or fine particulate matter (PM).",
     equipmentTypeNames: ["Air Handling Unit"],
     keywords: ["voc", "particulate matter", "chemical smell", "fumes", "dusty air"],
+    suggestedCategorySlugs: ["voc-filtration", "hepa", "air-activated-carbon"],
   },
   {
     id: "filter_replacement",
@@ -64,6 +75,7 @@ export const PROBLEMS: ProblemDefinition[] = [
     description: "A scheduled or overdue filter replacement.",
     equipmentTypeNames: ["Filter Housing"],
     keywords: ["replace my filter", "filter replacement", "filter is due", "filter overdue", "change my filter"],
+    suggestedCategorySlugs: ["water-filtration"],
   },
 ];
 

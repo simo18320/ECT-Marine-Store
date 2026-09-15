@@ -3,7 +3,7 @@ import { SiteHeader } from "@/components/nav/site-header";
 import { SiteFooter } from "@/components/nav/site-footer";
 import { ProductCard } from "@/components/product/product-card";
 import { PROBLEMS, getProblem } from "@/lib/recommendations/problems";
-import { getRecommendationsForProblem } from "@/lib/recommendations/engine";
+import { getRecommendationsForProblem, getSuggestedProductTypes } from "@/lib/recommendations/engine";
 import { createClient } from "@/lib/supabase/server";
 import { getYachtsForUser } from "@/lib/yachts/queries";
 
@@ -62,7 +62,10 @@ async function ProblemResults({ problemId, yachtId }: { problemId: string; yacht
   } = await supabase.auth.getUser();
   const yachts = user ? await getYachtsForUser() : [];
 
-  const results = await getRecommendationsForProblem(problemId, yachtId);
+  const [results, suggestedTypes] = await Promise.all([
+    getRecommendationsForProblem(problemId, yachtId),
+    getSuggestedProductTypes(problemId),
+  ]);
 
   return (
     <div className="mt-8">
@@ -75,6 +78,38 @@ async function ProblemResults({ problemId, yachtId }: { problemId: string; yacht
           ← Choose a different problem
         </Link>
       </div>
+
+      {suggestedTypes.length > 0 && (
+        <div className="mb-10">
+          <h3 className="text-sm font-medium">Product types that typically address this</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            A starting point for browsing — always confirm size and fit for your equipment before
+            ordering.
+          </p>
+          <div className="mt-4 flex flex-col gap-6">
+            {suggestedTypes.map(({ category, products }) => (
+              <div key={category.id}>
+                <div className="mb-2 flex items-center justify-between">
+                  <h4 className="font-medium">{category.name}</h4>
+                  <Link
+                    href={`/categories/${category.slug}`}
+                    className="text-sm text-primary hover:underline"
+                  >
+                    Browse the full range →
+                  </Link>
+                </div>
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+                  {products.map((product) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <h3 className="mb-4 text-sm font-medium">Verified compatible with your yacht&rsquo;s equipment</h3>
 
       {yachts.length > 0 && (
         <div className="mb-6 flex flex-wrap items-center gap-2 text-sm">
