@@ -16,7 +16,10 @@ export interface ProblemDefinition {
   /** Category slugs (from the storefront's own category tree) that typically address this
    * problem — shown as a "product types worth browsing" suggestion, distinct from and never a
    * substitute for the verified-compatible results below it: it's a starting point for browsing,
-   * not a compatibility claim, since product_compatibility rows don't exist for every product yet. */
+   * not a compatibility claim, since product_compatibility rows don't exist for every product yet.
+   * Each slug is matched exactly (no subtree expansion) — for a branch category, list its relevant
+   * children individually rather than the parent, so the capped preview surfaces the products that
+   * actually matter instead of whichever child sorts first alphabetically. */
   suggestedCategorySlugs: string[];
 }
 
@@ -51,7 +54,7 @@ export const PROBLEMS: ProblemDefinition[] = [
     description: "Improving overall water filtration or desalination output.",
     equipmentTypeNames: ["Filter Housing", "RO Membrane Housing", "Desalination Unit"],
     keywords: ["upgrade my filtration", "improve water filtration", "desalination output", "more fresh water"],
-    suggestedCategorySlugs: ["water-filter-housings", "ro-membranes"],
+    suggestedCategorySlugs: ["water-filter-housings", "water-reverse-osmosis"],
   },
   {
     id: "hvac_air_quality",
@@ -75,7 +78,7 @@ export const PROBLEMS: ProblemDefinition[] = [
     description: "A scheduled or overdue filter replacement.",
     equipmentTypeNames: ["Filter Housing"],
     keywords: ["replace my filter", "filter replacement", "filter is due", "filter overdue", "change my filter"],
-    suggestedCategorySlugs: ["water-filtration"],
+    suggestedCategorySlugs: ["carbon-block", "cto", "gac", "pp-cartridges", "sediment-filters"],
   },
 ];
 

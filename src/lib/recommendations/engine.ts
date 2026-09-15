@@ -1,13 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getProblem } from "./problems";
 import { rankCandidates, type MatchTier } from "./rules";
-import {
-  PRODUCT_LIST_SELECT,
-  toListItem,
-  getCategorySubtreeIds,
-  type ProductListItem,
-  type RawProductListRow,
-} from "@/lib/products/queries";
+import { PRODUCT_LIST_SELECT, toListItem, type ProductListItem, type RawProductListRow } from "@/lib/products/queries";
 
 export interface RecommendationResult {
   product: ProductListItem;
@@ -120,6 +114,13 @@ export interface SuggestedProductType {
  * product_compatibility data, which only exists for some products so far. Never claims verified
  * compatibility (that's what getRecommendationsForProblem is for); it's just a starting point for
  * browsing, labelled as such wherever it's rendered.
+ *
+ * Deliberately an exact category_id match, not the subtree: each slug in suggestedCategorySlugs is
+ * hand-picked to be exactly the node the products live on (e.g. "water-reverse-osmosis" itself
+ * holds the sellable puRO systems, while its child "ro-membranes" holds spare membranes) — a
+ * branch category that should surface several of its children lists each of those slugs directly
+ * rather than relying on subtree expansion, which would otherwise let a handful of consumables
+ * crowd the real product out of the capped result.
  */
 export async function getSuggestedProductTypes(problemId: string): Promise<SuggestedProductType[]> {
   const problem = getProblem(problemId);
@@ -134,12 +135,11 @@ export async function getSuggestedProductTypes(problemId: string): Promise<Sugge
 
   const results: SuggestedProductType[] = [];
   for (const category of categories) {
-    const subtreeIds = await getCategorySubtreeIds(category.id);
     const { data } = await supabase
       .from("products")
       .select(PRODUCT_LIST_SELECT)
       .eq("is_active", true)
-      .in("category_id", subtreeIds)
+      .eq("category_id", category.id)
       .order("name")
       .limit(4);
     const products = ((data ?? []) as unknown as RawProductListRow[]).map(toListItem);
