@@ -46,7 +46,7 @@ export const PROBLEMS: ProblemDefinition[] = [
     description: "Bacterial or Legionella risk in the water system.",
     equipmentTypeNames: ["UV System"],
     keywords: ["legionella", "bacteria", "bacterial", "microbiological"],
-    suggestedCategorySlugs: ["uv-systems"],
+    suggestedCategorySlugs: ["uv-lamps", "uv-systems"],
   },
   {
     id: "filtration_upgrade",

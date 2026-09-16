@@ -121,7 +121,15 @@ export interface SuggestedProductType {
  * branch category that should surface several of its children lists each of those slugs directly
  * rather than relying on subtree expansion, which would otherwise let a handful of consumables
  * crowd the real product out of the capped result.
+ *
+ * Category order follows suggestedCategorySlugs (not the DB's own return order), so listing
+ * "uv-lamps" before "uv-systems" is what puts the lamps section above the sterilizer-systems one.
+ * Within a category, control units/starters (accessories you'd only buy for a system you already
+ * own, never the thing that actually addresses the problem) are pushed after the primary products
+ * rather than sorted alphabetically, so they don't crowd out the real product in the capped preview.
  */
+const DEPRIORITIZED_NAME_PATTERN = /\b(control unit|starter)\b/i;
+
 export async function getSuggestedProductTypes(problemId: string): Promise<SuggestedProductType[]> {
   const problem = getProblem(problemId);
   if (!problem) return [];
@@ -133,16 +141,23 @@ export async function getSuggestedProductTypes(problemId: string): Promise<Sugge
     .in("slug", problem.suggestedCategorySlugs);
   if (!categories) return [];
 
+  const categoryBySlug = new Map(categories.map((c) => [c.slug, c]));
+
   const results: SuggestedProductType[] = [];
-  for (const category of categories) {
+  for (const slug of problem.suggestedCategorySlugs) {
+    const category = categoryBySlug.get(slug);
+    if (!category) continue;
+
     const { data } = await supabase
       .from("products")
       .select(PRODUCT_LIST_SELECT)
       .eq("is_active", true)
       .eq("category_id", category.id)
-      .order("name")
-      .limit(4);
-    const products = ((data ?? []) as unknown as RawProductListRow[]).map(toListItem);
+      .order("name");
+    const products = ((data ?? []) as unknown as RawProductListRow[])
+      .map(toListItem)
+      .sort((a, b) => Number(DEPRIORITIZED_NAME_PATTERN.test(a.name)) - Number(DEPRIORITIZED_NAME_PATTERN.test(b.name)))
+      .slice(0, 4);
     if (products.length > 0) results.push({ category, products });
   }
   return results;
