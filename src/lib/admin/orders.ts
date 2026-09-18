@@ -21,7 +21,7 @@ export async function getOrderAdmin(orderNumber: string) {
   const { data } = await supabase
     .from("orders")
     .select(
-      "*, customer:profiles(email, full_name), order_items(*), payments(*), shipping_address:customer_addresses!orders_shipping_address_id_fkey(*)",
+      "*, customer:profiles(email, full_name), order_items(*), payments(*), invoices:order_invoices(*), shipping_address:customer_addresses!orders_shipping_address_id_fkey(*)",
     )
     .eq("order_number", orderNumber)
     .maybeSingle();

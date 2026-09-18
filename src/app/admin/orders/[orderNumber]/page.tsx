@@ -138,6 +138,31 @@ export default async function AdminOrderDetailPage({
         <GenerateDdtForm action={generateDdt} defaultWeightKg={estimatedWeightKg} />
       </div>
 
+      {order.invoices.length > 0 && (
+        <div className="mt-6">
+          <h2 className="mb-1 text-sm font-semibold">Fiscal document</h2>
+          <ul className="text-sm text-muted-foreground">
+            {order.invoices.map((inv) => (
+              <li key={inv.id}>
+                <span className="capitalize">{inv.document_type}</span> —{" "}
+                <span
+                  className={
+                    inv.status === "issued"
+                      ? "text-status-good"
+                      : inv.status === "failed"
+                        ? "text-status-critical"
+                        : "text-status-warning"
+                  }
+                >
+                  {inv.status}
+                </span>
+                {inv.error_message && <span className="ml-2">({inv.error_message})</span>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {order.payments.length > 0 && (
         <div className="mt-6">
           <h2 className="mb-1 text-sm font-semibold">Payments</h2>

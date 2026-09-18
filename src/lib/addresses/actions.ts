@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 function readAddressForm(formData: FormData) {
+  const isBusiness = formData.get("is_business") === "on";
   return {
     label: (formData.get("label") as string) || null,
     full_name: formData.get("full_name") as string,
@@ -14,6 +15,11 @@ function readAddressForm(formData: FormData) {
     postal_code: formData.get("postal_code") as string,
     country: formData.get("country") as string,
     phone: (formData.get("phone") as string) || null,
+    is_business: isBusiness,
+    tax_code: (formData.get("tax_code") as string)?.trim() || null,
+    vat_number: isBusiness ? (formData.get("vat_number") as string)?.trim() || null : null,
+    pec_email: isBusiness ? (formData.get("pec_email") as string)?.trim() || null : null,
+    sdi_code: isBusiness ? (formData.get("sdi_code") as string)?.trim() || null : null,
   };
 }
 

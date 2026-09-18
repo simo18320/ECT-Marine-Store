@@ -1,6 +1,7 @@
 import type Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendOrderConfirmationEmail } from "@/lib/email/order-confirmation";
+import { issueFiscalDocumentForOrder } from "@/lib/orders/fiscal-documents";
 
 /**
  * Handles Stripe's `checkout.session.completed` event. Must be safe to call more than once
@@ -56,6 +57,8 @@ export async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Se
     .maybeSingle();
 
   if (!transitioned) return; // already processed by an earlier delivery of this (or a retried) event
+
+  await issueFiscalDocumentForOrder(admin, order.id);
 
   const { data: items } = await admin
     .from("order_items")

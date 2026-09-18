@@ -379,12 +379,17 @@ export type Database = {
           customer_id: string
           full_name: string
           id: string
+          is_business: boolean
           is_default: boolean
           label: string | null
           line1: string
           line2: string | null
+          pec_email: string | null
           phone: string | null
           postal_code: string
+          sdi_code: string | null
+          tax_code: string | null
+          vat_number: string | null
         }
         Insert: {
           city: string
@@ -393,12 +398,17 @@ export type Database = {
           customer_id: string
           full_name: string
           id?: string
+          is_business?: boolean
           is_default?: boolean
           label?: string | null
           line1: string
           line2?: string | null
+          pec_email?: string | null
           phone?: string | null
           postal_code: string
+          sdi_code?: string | null
+          tax_code?: string | null
+          vat_number?: string | null
         }
         Update: {
           city?: string
@@ -407,12 +417,17 @@ export type Database = {
           customer_id?: string
           full_name?: string
           id?: string
+          is_business?: boolean
           is_default?: boolean
           label?: string | null
           line1?: string
           line2?: string | null
+          pec_email?: string | null
           phone?: string | null
           postal_code?: string
+          sdi_code?: string | null
+          tax_code?: string | null
+          vat_number?: string | null
         }
         Relationships: [
           {
@@ -939,6 +954,47 @@ export type Database = {
             columns: ["yacht_id"]
             isOneToOne: false
             referencedRelation: "yachts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_invoices: {
+        Row: {
+          created_at: string
+          document_type: string
+          error_message: string | null
+          external_id: string | null
+          id: string
+          order_id: string
+          provider: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          document_type: string
+          error_message?: string | null
+          external_id?: string | null
+          id?: string
+          order_id: string
+          provider?: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          document_type?: string
+          error_message?: string | null
+          external_id?: string | null
+          id?: string
+          order_id?: string
+          provider?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_invoices_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
         ]
