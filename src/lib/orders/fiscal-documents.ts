@@ -39,7 +39,7 @@ export async function issueFiscalDocumentForOrder(admin: SupabaseClient<Database
 
   const { data: order } = await admin
     .from("orders")
-    .select("id, billing_address:customer_addresses!orders_billing_address_id_fkey(*)")
+    .select("id, grand_total, billing_address:customer_addresses!orders_billing_address_id_fkey(*)")
     .eq("id", orderId)
     .maybeSingle();
   if (!order) return;
@@ -73,6 +73,7 @@ export async function issueFiscalDocumentForOrder(admin: SupabaseClient<Database
         vat: { id: 0, value: item.vat_rate },
       })),
       eInvoice: documentType === "invoice",
+      grossAmount: order.grand_total,
     });
 
     await admin.from("order_invoices").insert({

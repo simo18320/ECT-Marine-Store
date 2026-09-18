@@ -26,6 +26,7 @@ interface CreateIssuedDocumentInput {
   entity: IssuedDocumentEntity;
   items: IssuedDocumentItem[];
   eInvoice: boolean;
+  grossAmount: number;
 }
 
 function getCredentials() {
@@ -59,6 +60,14 @@ export async function createIssuedDocument(input: CreateIssuedDocumentInput): Pr
         date: new Date().toISOString().slice(0, 10),
         currency: { id: "EUR" },
         items_list: input.items,
+        // Fatture in Cloud rejects a document whose payments don't sum to the amount due, and
+        // marking a payment "paid" requires a settlement/bank account id we have no way to look
+        // up with this token's scopes — "not_paid" satisfies the total-reconciliation check
+        // without guessing at an account, leaving actual payment reconciliation (the order was
+        // already collected via Stripe) as the existing manual bookkeeping step it is today.
+        payments_list: [
+          { amount: input.grossAmount, due_date: new Date().toISOString().slice(0, 10), status: "not_paid" },
+        ],
         e_invoice: input.eInvoice,
       },
     }),
