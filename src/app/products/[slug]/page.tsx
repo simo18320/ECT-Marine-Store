@@ -4,6 +4,7 @@ import { SiteHeader } from "@/components/nav/site-header";
 import { SiteFooter } from "@/components/nav/site-footer";
 import { ProductCard } from "@/components/product/product-card";
 import { PurchasePanel } from "@/components/product/purchase-panel";
+import { AvailabilityRequestForm } from "@/components/product/availability-request-form";
 import { VariantSelector } from "@/components/product/variant-selector";
 import { SamplingKitDetails } from "@/components/product/sampling-kit-details";
 import { getProductBySlug } from "@/lib/products/queries";
@@ -110,6 +111,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 requiresComplianceAck={product.requires_compliance_ack}
               />
             </div>
+
+            {stockStatus === "out_of_stock" && (
+              <div className="mt-4">
+                <AvailabilityRequestForm productId={product.id} />
+              </div>
+            )}
 
             {product.is_bundle && product.bundle_items.length > 0 && (
               <div className="mt-8 rounded-2xl border border-border bg-card p-4">
