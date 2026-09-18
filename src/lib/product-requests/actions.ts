@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { sendProductRequestNotification } from "@/lib/email/product-request-notification";
 import type { Database } from "@/types/database";
 
 export type AvailabilityRequestState = { error?: string; success?: boolean };
@@ -37,6 +38,20 @@ export async function requestProductAvailability(
   });
 
   if (error) return { error: "Could not send your request. Please try again." };
+
+  const { data: product } = await supabase.from("products").select("name, sku").eq("id", productId).maybeSingle();
+  if (product) {
+    await sendProductRequestNotification({
+      productName: product.name,
+      productSku: product.sku,
+      customerName: name,
+      customerEmail: email,
+      customerPhone: phone,
+      quantity,
+      message,
+    });
+  }
+
   return { success: true };
 }
 
