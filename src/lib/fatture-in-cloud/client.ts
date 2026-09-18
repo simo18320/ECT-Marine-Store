@@ -16,7 +16,9 @@ interface IssuedDocumentItem {
   name: string;
   qty: number;
   net_price: number;
-  vat: { value: number };
+  // id: 0 marks an ad-hoc rate not tied to one of the company's predefined VAT types in
+  // Fatture in Cloud — required by their API even when only a plain percentage is needed.
+  vat: { id: number; value: number };
 }
 
 interface CreateIssuedDocumentInput {

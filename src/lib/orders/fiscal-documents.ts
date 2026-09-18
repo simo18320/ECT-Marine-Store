@@ -23,6 +23,17 @@ export function hasCompleteFiscalData(address: BillingAddress | null): boolean {
  * (webhook-handlers.ts) — never blocks or throws into the caller, since a Fatture in Cloud
  * outage must not stop order fulfillment; failures are recorded for manual follow-up instead.
  */
+// Fatture in Cloud validates the entity's country against its own (Italian-language) list —
+// "Italy" is rejected, only "Italia" is accepted. The checkout address form's Country field is
+// free text, so normalize the common English/ISO spellings customers actually type; anything
+// else is passed through as-is (most non-Italian recipients won't hit this code path anyway,
+// since a non-Italian business rarely has an Italian codice fiscale to trigger an invoice).
+const ITALY_ALIASES = new Set(["italy", "it", "ita"]);
+function normalizeCountryForFattureInCloud(country: string | null): string | undefined {
+  if (!country) return undefined;
+  return ITALY_ALIASES.has(country.trim().toLowerCase()) ? "Italia" : country;
+}
+
 export async function issueFiscalDocumentForOrder(admin: SupabaseClient<Database>, orderId: string): Promise<void> {
   if (!isFattureInCloudConfigured()) return;
 
@@ -51,7 +62,7 @@ export async function issueFiscalDocumentForOrder(admin: SupabaseClient<Database
         address_street: billingAddress?.line1 ?? undefined,
         address_postal_code: billingAddress?.postal_code ?? undefined,
         address_city: billingAddress?.city ?? undefined,
-        country: billingAddress?.country ?? undefined,
+        country: normalizeCountryForFattureInCloud(billingAddress?.country ?? null),
         certified_email: billingAddress?.pec_email ?? undefined,
         ei_code: billingAddress?.sdi_code ?? undefined,
       },
@@ -59,7 +70,7 @@ export async function issueFiscalDocumentForOrder(admin: SupabaseClient<Database
         name: item.name_snapshot,
         qty: item.quantity,
         net_price: item.unit_price,
-        vat: { value: item.vat_rate },
+        vat: { id: 0, value: item.vat_rate },
       })),
       eInvoice: documentType === "invoice",
     });
