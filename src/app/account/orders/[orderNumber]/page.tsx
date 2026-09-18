@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getShipmentForOrder } from "@/lib/shipments/queries";
 import { formatCurrency } from "@/lib/utils";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -11,6 +12,18 @@ const STATUS_LABEL: Record<string, string> = {
   delivered: "Delivered",
   cancelled: "Cancelled",
   refunded: "Refunded",
+};
+
+const SHIPMENT_STATUS_LABEL: Record<string, string> = {
+  ordered: "Order received",
+  processing: "Preparing your order",
+  ready_to_ship: "Ready to ship",
+  shipped: "Shipped",
+  in_transit: "In transit",
+  out_for_delivery: "Out for delivery",
+  delivered: "Delivered",
+  delayed: "Delayed",
+  exception: "Delivery issue — we're on it",
 };
 
 export default async function OrderDetailPage({
@@ -28,12 +41,14 @@ export default async function OrderDetailPage({
   const { data: order } = await supabase
     .from("orders")
     .select(
-      "order_number, status, subtotal, vat_total, shipping_total, grand_total, created_at, order_items(name_snapshot, sku_snapshot, quantity, unit_price, line_total)",
+      "id, order_number, status, subtotal, vat_total, shipping_total, grand_total, created_at, order_items(name_snapshot, sku_snapshot, quantity, unit_price, line_total)",
     )
     .eq("order_number", orderNumber)
     .maybeSingle();
 
   if (!order) notFound();
+
+  const shipment = await getShipmentForOrder(order.id);
 
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-16">
@@ -53,6 +68,33 @@ export default async function OrderDetailPage({
           day: "numeric",
         })}
       </p>
+
+      {shipment && (
+        <div className="mt-6 rounded-md border border-border bg-secondary/30 p-4 text-sm">
+          <p className="font-medium">{SHIPMENT_STATUS_LABEL[shipment.status] ?? shipment.status}</p>
+          {shipment.provider && (
+            <p className="mt-1 text-muted-foreground">
+              Carrier: {shipment.provider}
+              {shipment.tracking_number && ` — ${shipment.tracking_number}`}
+            </p>
+          )}
+          {shipment.tracking_number && (
+            <a
+              href={`https://t.17track.net/en#nums=${encodeURIComponent(shipment.tracking_number)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1 inline-block text-primary hover:underline"
+            >
+              Track package →
+            </a>
+          )}
+          {shipment.expected_delivery && (
+            <p className="mt-1 text-muted-foreground">
+              Expected delivery: {new Date(shipment.expected_delivery).toLocaleDateString("en-GB")}
+            </p>
+          )}
+        </div>
+      )}
 
       <ul className="mt-8 divide-y divide-border text-sm">
         {order.order_items.map((item, i) => (
