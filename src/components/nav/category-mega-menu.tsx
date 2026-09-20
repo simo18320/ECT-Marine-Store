@@ -2,39 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import type { CategoryNode, ProductSpecFacets } from "@/lib/products/queries";
+import type { CategoryNode } from "@/lib/products/queries";
 
-interface FilterGroup {
-  label: string;
-  param: string;
-  values: string[];
-  formatValue?: (v: string) => string;
-}
+const MAX_ITEMS_PER_COLUMN = 6;
 
-// Same five facets the category-page filter bar understands — jumping here with e.g.
-// ?micron=20 lands on a pre-filtered product list rather than a category tree to drill through.
-function facetGroups(facets: ProductSpecFacets | undefined): FilterGroup[] {
-  if (!facets) return [];
-  const groups: FilterGroup[] = [
-    { label: "Size", param: "size", values: facets.sizes },
-    { label: "Micron rating", param: "micron", values: facets.microns, formatValue: (v: string) => `${v} micron` },
-    { label: "Use", param: "use", values: facets.uses },
-    { label: "Filter type", param: "filterType", values: facets.filterTypes },
-    { label: "Filter class", param: "filterClass", values: facets.filterClasses },
-    { label: "Sampling type", param: "samplingType", values: facets.samplingTypes },
-    { label: "Investigation", param: "investigation", values: facets.investigations },
-    { label: "Application", param: "application", values: facets.applications },
-  ];
-  return groups.filter((group) => group.values.length > 0);
-}
-
-export function CategoryMegaMenu({
-  categories,
-  facetsBySlug,
-}: {
-  categories: CategoryNode[];
-  facetsBySlug: Record<string, ProductSpecFacets>;
-}) {
+export function CategoryMegaMenu({ categories }: { categories: CategoryNode[] }) {
   const [openSlug, setOpenSlug] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -54,12 +26,12 @@ export function CategoryMegaMenu({
   }, []);
 
   return (
-    <div ref={containerRef} className="hidden gap-6 text-sm font-medium text-muted-foreground md:flex">
+    <div ref={containerRef} className="relative hidden gap-6 text-sm font-medium text-muted-foreground md:flex">
       {categories.map((category) => {
-        const groups = facetGroups(facetsBySlug[category.slug]);
+        const columns = category.children;
         const isOpen = openSlug === category.slug;
 
-        if (groups.length === 0) {
+        if (columns.length === 0) {
           return (
             <Link key={category.id} href={`/categories/${category.slug}`} className="hover:text-foreground">
               {category.name}
@@ -68,7 +40,7 @@ export function CategoryMegaMenu({
         }
 
         return (
-          <div key={category.id} className="relative">
+          <div key={category.id}>
             <button
               type="button"
               onClick={() => setOpenSlug(isOpen ? null : category.slug)}
@@ -82,28 +54,34 @@ export function CategoryMegaMenu({
             </button>
 
             {isOpen && (
-              <div className="absolute left-0 top-full z-20 mt-2 flex w-max max-w-[90vw] gap-8 rounded-xl border border-border bg-card p-6 shadow-lg">
+              <div className="absolute left-0 top-full z-20 mt-2 flex w-[min(44rem,90vw)] flex-wrap gap-x-8 gap-y-6 rounded-xl border border-border bg-card p-6 shadow-lg">
+                <div className="basis-full">
                 <Link
                   href={`/categories/${category.slug}`}
                   onClick={() => setOpenSlug(null)}
-                  className="shrink-0 self-start rounded-full bg-secondary px-3 py-1.5 text-xs font-semibold text-secondary-foreground hover:bg-secondary/70"
+                  className="rounded-full bg-secondary px-3 py-1.5 text-xs font-semibold text-secondary-foreground hover:bg-secondary/70"
                 >
                   Shop all {category.name} →
                 </Link>
-                {groups.map((group) => (
-                  <div key={group.param} className="min-w-32">
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground">
-                      {group.label}
-                    </p>
+                </div>
+                {columns.map((column) => (
+                  <div key={column.id} className="min-w-36 max-w-52">
+                    <Link
+                      href={`/categories/${column.slug}`}
+                      onClick={() => setOpenSlug(null)}
+                      className="mb-2 block text-xs font-semibold uppercase tracking-wide text-foreground hover:text-primary"
+                    >
+                      {column.name}
+                    </Link>
                     <ul className="flex flex-col gap-1.5">
-                      {group.values.map((value) => (
-                        <li key={value}>
+                      {column.children.slice(0, MAX_ITEMS_PER_COLUMN).map((child) => (
+                        <li key={child.id}>
                           <Link
-                            href={`/categories/${category.slug}?${group.param}=${encodeURIComponent(value)}`}
+                            href={`/categories/${child.slug}`}
                             onClick={() => setOpenSlug(null)}
                             className="text-muted-foreground hover:text-primary"
                           >
-                            {group.formatValue ? group.formatValue(value) : value}
+                            {child.name}
                           </Link>
                         </li>
                       ))}
