@@ -73,9 +73,9 @@ export default async function HomePage() {
             Eco Cleaning Technologies
           </p>
           <h1 className="max-w-3xl text-3xl font-medium text-balance text-white sm:text-5xl lg:text-6xl">
-            Hard to find.
+            Every part, any yacht:
             <br />
-            <span className="italic">Easy with ECT.</span>
+            <span className="italic">one search.</span>
           </h1>
           <p className="max-w-xl text-sm text-white/85 sm:text-base">
             The spare part you&rsquo;re looking for isn&rsquo;t a problem. We&rsquo;ll find it for you.
