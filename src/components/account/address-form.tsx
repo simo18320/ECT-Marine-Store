@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import type { Address } from "@/lib/addresses/queries";
+import { countryOptions } from "@/lib/countries";
+import { isItaly } from "@/lib/orders/shipping";
 
 interface AddressFormProps {
   action: (formData: FormData) => void;
@@ -10,6 +12,13 @@ interface AddressFormProps {
 }
 
 export function AddressForm({ action, defaultValues, submitLabel }: AddressFormProps) {
+  // An address saved before this was a dropdown may hold free text ("Italy", "france"): keep it
+  // selectable rather than silently changing it to something else on the next edit.
+  const countries = countryOptions();
+  const saved = isItaly(defaultValues?.country) ? "Italia" : defaultValues?.country;
+  if (saved && !countries.some((c) => c.value === saved)) {
+    countries.unshift({ value: saved, label: saved });
+  }
   const [businessFieldsShown, setBusinessFieldsShown] = useState(defaultValues?.is_business ?? false);
 
   return (
@@ -76,12 +85,18 @@ export function AddressForm({ action, defaultValues, submitLabel }: AddressFormP
 
       <label className="flex flex-col gap-1 text-sm">
         Country
-        <input
+        <select
           name="country"
           required
-          defaultValue={defaultValues?.country ?? ""}
+          defaultValue={saved ?? "Italia"}
           className="rounded-md border border-input bg-card px-3 py-2"
-        />
+        >
+          {countries.map((c) => (
+            <option key={c.value} value={c.value}>
+              {c.label}
+            </option>
+          ))}
+        </select>
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
