@@ -24,7 +24,7 @@ export default async function FindProductPage({
           Tell us what you&rsquo;re trying to solve and we&rsquo;ll recommend compatible products
           — never a guess, only products with verified compatibility.{" "}
           <Link href="/assistant" className="font-medium text-primary hover:underline">
-            Prefer to describe it in your own words? Ask ECT →
+            Prefer to describe it in your own words? Ask ECT (AI assistant) →
           </Link>
         </p>
 

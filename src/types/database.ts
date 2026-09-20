@@ -1077,6 +1077,7 @@ export type Database = {
           status: Database["public"]["Enums"]["order_status"]
           stripe_checkout_session_id: string | null
           subtotal: number
+          terms_accepted_at: string | null
           updated_at: string
           vat_total: number
         }
@@ -1096,6 +1097,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["order_status"]
           stripe_checkout_session_id?: string | null
           subtotal?: number
+          terms_accepted_at?: string | null
           updated_at?: string
           vat_total?: number
         }
@@ -1115,6 +1117,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["order_status"]
           stripe_checkout_session_id?: string | null
           subtotal?: number
+          terms_accepted_at?: string | null
           updated_at?: string
           vat_total?: number
         }

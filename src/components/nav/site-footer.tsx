@@ -8,6 +8,14 @@ export function SiteFooter() {
           Eco Cleaning Technologies Consulting Srl — ECT Marine Store ·{" "}
           <Link href="/company-info" className="hover:text-foreground hover:underline">
             Company information
+          </Link>{" "}
+          ·{" "}
+          <Link href="/terms" className="hover:text-foreground hover:underline">
+            Terms of Sale
+          </Link>{" "}
+          ·{" "}
+          <Link href="/withdrawal" className="hover:text-foreground hover:underline">
+            Right of withdrawal
           </Link>
         </p>
         <div className="flex flex-wrap gap-x-6 gap-y-2">

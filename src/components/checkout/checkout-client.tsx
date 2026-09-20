@@ -11,6 +11,7 @@ export function CheckoutClient({ addresses }: { addresses: Address[] }) {
   const { items, subtotal, vatTotal, grandTotal } = useCart();
   const defaultAddress = addresses.find((a) => a.is_default) ?? addresses[0];
   const [addressId, setAddressId] = useState(defaultAddress?.id ?? "");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -20,6 +21,7 @@ export function CheckoutClient({ addresses }: { addresses: Address[] }) {
       const result = await startCheckout(
         items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
         addressId,
+        acceptedTerms,
       );
       if (result?.error) setError(result.error);
     });
@@ -105,13 +107,33 @@ export function CheckoutClient({ addresses }: { addresses: Address[] }) {
 
         {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
 
+        <label className="mt-5 flex items-start gap-2 text-xs text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={acceptedTerms}
+            onChange={(e) => setAcceptedTerms(e.target.checked)}
+            className="mt-0.5"
+          />
+          <span>
+            I have read and accept the{" "}
+            <Link href="/terms" target="_blank" className="font-medium text-primary hover:underline">
+              Terms of Sale
+            </Link>{" "}
+            and the information on the{" "}
+            <Link href="/withdrawal" target="_blank" className="font-medium text-primary hover:underline">
+              right of withdrawal
+            </Link>
+            .
+          </span>
+        </label>
+
         <button
           type="button"
           onClick={handleCheckout}
-          disabled={isPending || !addressId}
-          className="mt-5 w-full rounded-full bg-primary px-4 py-3 text-sm font-medium text-primary-foreground shadow-sm transition hover:shadow-md disabled:opacity-50"
+          disabled={isPending || !addressId || !acceptedTerms}
+          className="mt-4 w-full rounded-full bg-primary px-4 py-3 text-sm font-medium text-primary-foreground shadow-sm transition hover:shadow-md disabled:opacity-50"
         >
-          {isPending ? "Redirecting to Stripe…" : "Pay with Stripe"}
+          {isPending ? "Redirecting to payment…" : "Place order — obligation to pay"}
         </button>
       </aside>
     </div>

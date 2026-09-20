@@ -22,6 +22,7 @@ export interface StartCheckoutResult {
 export async function startCheckout(
   items: CheckoutLineInput[],
   addressId: string,
+  acceptedTerms: boolean,
 ): Promise<StartCheckoutResult | void> {
   const supabase = await createClient();
   const {
@@ -31,6 +32,7 @@ export async function startCheckout(
 
   if (!addressId) return { error: "Select a delivery address before checking out." };
   if (items.length === 0) return { error: "Your cart is empty." };
+  if (!acceptedTerms) return { error: "Please accept the Terms of Sale to place your order." };
 
   let priced;
   try {
@@ -40,7 +42,7 @@ export async function startCheckout(
     return { error: err instanceof CheckoutError ? err.message : "Checkout failed. Please try again." };
   }
 
-  const order = await createPendingOrder({ customerId: user.id, addressId, lines: priced });
+  const order = await createPendingOrder({ customerId: user.id, addressId, lines: priced, termsAcceptedAt: new Date() });
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const stripe = getStripeClient();

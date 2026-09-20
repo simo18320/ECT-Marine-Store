@@ -98,7 +98,7 @@ export function AssistantChat({ yachts }: { yachts: { id: string; name: string }
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="e.g. My water tastes odd, what should I check?"
+          placeholder="Ask the AI assistant — e.g. My water tastes odd, what should I check?"
           className="flex-1 rounded-md border border-input bg-card px-3 py-2 text-sm"
         />
         <button

@@ -83,6 +83,7 @@ export interface CreatePendingOrderInput {
   customerId: string;
   addressId: string;
   lines: PricedLine[];
+  termsAcceptedAt: Date;
 }
 
 export interface PendingOrder {
@@ -95,6 +96,7 @@ export async function createPendingOrder({
   customerId,
   addressId,
   lines,
+  termsAcceptedAt,
 }: CreatePendingOrderInput): Promise<PendingOrder> {
   const admin = createAdminClient();
   const totals = computeOrderTotals(lines);
@@ -111,6 +113,7 @@ export async function createPendingOrder({
       grand_total: totals.grandTotal,
       shipping_address_id: addressId,
       billing_address_id: addressId,
+      terms_accepted_at: termsAcceptedAt.toISOString(),
     })
     .select("id, order_number, grand_total")
     .single();

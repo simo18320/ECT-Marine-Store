@@ -18,10 +18,20 @@ export default async function AssistantPage() {
     <>
       <SiteHeader />
       <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-10">
-        <h1 className="text-3xl font-medium">Ask ECT</h1>
-        <p className="mt-1 mb-6 text-sm text-muted-foreground">
+        <h1 className="flex items-center gap-3 text-3xl font-medium">
+          Ask ECT
+          <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-secondary-foreground">
+            AI assistant
+          </span>
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           A quick way to ask about products, compatibility, or your yacht&rsquo;s maintenance —
           grounded only in what ECT has on file, never a guess.
+        </p>
+        <p className="mt-3 mb-6 rounded-md border border-border bg-card px-3 py-2 text-xs text-muted-foreground">
+          You are chatting with an artificial-intelligence assistant, not a person. Answers may
+          contain errors — confirm anything critical with ECT before ordering or acting on it.
+          Your messages are processed by an external AI provider.
         </p>
         <AssistantChat yachts={yachts.map((y) => ({ id: y.id, name: y.name }))} />
       </main>
