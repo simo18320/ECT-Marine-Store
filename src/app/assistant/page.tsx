@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/nav/site-header";
 import { SiteFooter } from "@/components/nav/site-footer";
@@ -31,7 +32,8 @@ export default async function AssistantPage() {
         <p className="mt-3 mb-6 rounded-md border border-border bg-card px-3 py-2 text-xs text-muted-foreground">
           You are chatting with an artificial-intelligence assistant, not a person. Answers may
           contain errors — confirm anything critical with ECT before ordering or acting on it.
-          Your messages are processed by an external AI provider.
+          Your messages are processed by an external AI provider — see our{" "}
+          <Link href="/privacy" className="font-medium text-primary hover:underline">Privacy Policy</Link>.
         </p>
         <AssistantChat yachts={yachts.map((y) => ({ id: y.id, name: y.name }))} />
       </main>

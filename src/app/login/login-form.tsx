@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -123,6 +124,16 @@ export function LoginForm() {
       >
         {status === "loading" ? "Please wait…" : mode === "sign-in" ? "Sign in" : "Create account"}
       </button>
+
+      {mode === "sign-up" && (
+        <p className="text-xs text-muted-foreground">
+          By creating an account you confirm you have read our{" "}
+          <Link href="/privacy" target="_blank" className="font-medium text-primary hover:underline">
+            Privacy Policy
+          </Link>
+          .
+        </p>
+      )}
     </form>
   );
 }

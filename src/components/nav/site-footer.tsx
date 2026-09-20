@@ -16,6 +16,10 @@ export function SiteFooter() {
           ·{" "}
           <Link href="/withdrawal" className="hover:text-foreground hover:underline">
             Right of withdrawal
+          </Link>{" "}
+          ·{" "}
+          <Link href="/privacy" className="hover:text-foreground hover:underline">
+            Privacy
           </Link>
         </p>
         <div className="flex flex-wrap gap-x-6 gap-y-2">
