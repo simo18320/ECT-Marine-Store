@@ -2020,23 +2020,76 @@ export type Database = {
           },
         ]
       }
-      store_settings: {
+      shipping_quote_requests: {
         Row: {
-          id: boolean
-          restock_label: string
-          restock_mode: boolean
+          address_summary: string | null
+          country: string
+          created_at: string
+          customer_id: string | null
+          email: string
+          id: string
+          items: Json
+          message: string | null
+          status: string
           updated_at: string
         }
         Insert: {
-          id?: boolean
-          restock_label?: string
-          restock_mode?: boolean
+          address_summary?: string | null
+          country: string
+          created_at?: string
+          customer_id?: string | null
+          email: string
+          id?: string
+          items: Json
+          message?: string | null
+          status?: string
           updated_at?: string
         }
         Update: {
+          address_summary?: string | null
+          country?: string
+          created_at?: string
+          customer_id?: string | null
+          email?: string
+          id?: string
+          items?: Json
+          message?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipping_quote_requests_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_settings: {
+        Row: {
+          free_shipping_threshold: number
+          id: boolean
+          restock_label: string
+          restock_mode: boolean
+          shipping_fee_italy: number
+          updated_at: string
+        }
+        Insert: {
+          free_shipping_threshold?: number
           id?: boolean
           restock_label?: string
           restock_mode?: boolean
+          shipping_fee_italy?: number
+          updated_at?: string
+        }
+        Update: {
+          free_shipping_threshold?: number
+          id?: boolean
+          restock_label?: string
+          restock_mode?: boolean
+          shipping_fee_italy?: number
           updated_at?: string
         }
         Relationships: []

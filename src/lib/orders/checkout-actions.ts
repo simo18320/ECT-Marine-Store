@@ -3,7 +3,9 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getStripeClient } from "@/lib/stripe/client";
-import { toStripeUnitAmount } from "./rules";
+import { computeOrderTotals, toStripeUnitAmount } from "./rules";
+import { computeShipping } from "./shipping";
+import { getShippingSettings } from "@/lib/settings/queries";
 import type Stripe from "stripe";
 import {
   assertStockAvailable,
@@ -42,7 +44,24 @@ export async function startCheckout(
     return { error: err instanceof CheckoutError ? err.message : "Checkout failed. Please try again." };
   }
 
-  const order = await createPendingOrder({ customerId: user.id, addressId, lines: priced, termsAcceptedAt: new Date() });
+  // Shipping is decided here from the stored address country, never from what the client sent.
+  const { data: address } = await supabase.from("customer_addresses").select("country").eq("id", addressId).maybeSingle();
+  const shipping = computeShipping({
+    goodsGross: computeOrderTotals(priced).grandTotal,
+    country: address?.country,
+    settings: await getShippingSettings(),
+  });
+  if (shipping.kind === "quote") {
+    return { error: "Shipping outside Italy is by quote. Use \"Request a shipping quote\" instead of paying online." };
+  }
+
+  const order = await createPendingOrder({
+    customerId: user.id,
+    addressId,
+    lines: priced,
+    shipping,
+    termsAcceptedAt: new Date(),
+  });
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const stripe = getStripeClient();
@@ -56,14 +75,28 @@ export async function startCheckout(
       // charged twice.
       managed_payments: { enabled: false },
       customer_email: user.email ?? undefined,
-      line_items: priced.map((line) => ({
-        price_data: {
-          currency: "eur",
-          product_data: { name: line.name },
-          unit_amount: toStripeUnitAmount(line.unitPrice, line.vatRate),
-        },
-        quantity: line.quantity,
-      })),
+      line_items: [
+        ...priced.map((line) => ({
+          price_data: {
+            currency: "eur",
+            product_data: { name: line.name },
+            unit_amount: toStripeUnitAmount(line.unitPrice, line.vatRate),
+          },
+          quantity: line.quantity,
+        })),
+        ...(shipping.kind === "fee"
+          ? [
+              {
+                price_data: {
+                  currency: "eur",
+                  product_data: { name: "Shipping" },
+                  unit_amount: Math.round((shipping.net + shipping.vat) * 100),
+                },
+                quantity: 1,
+              },
+            ]
+          : []),
+      ],
       success_url: `${appUrl}/checkout/success?order=${order.orderNumber}`,
       cancel_url: `${appUrl}/cart`,
       metadata: { order_id: order.id, order_number: order.orderNumber },

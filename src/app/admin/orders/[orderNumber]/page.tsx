@@ -93,6 +93,12 @@ export default async function AdminOrderDetailPage({
           <dt className="text-muted-foreground">Subtotal</dt>
           <dd>{formatCurrency(order.subtotal)}</dd>
         </div>
+        {order.shipping_total > 0 && (
+          <div className="flex justify-between">
+            <dt className="text-muted-foreground">Shipping</dt>
+            <dd>{formatCurrency(order.shipping_total)}</dd>
+          </div>
+        )}
         <div className="flex justify-between">
           <dt className="text-muted-foreground">VAT</dt>
           <dd>{formatCurrency(order.vat_total)}</dd>

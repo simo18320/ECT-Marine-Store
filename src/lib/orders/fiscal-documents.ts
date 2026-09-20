@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createIssuedDocument, isFattureInCloudConfigured } from "@/lib/fatture-in-cloud/client";
+import { SHIPPING_VAT_RATE } from "@/lib/orders/shipping";
 import type { Database } from "@/types/database";
 
 type BillingAddress = Pick<
@@ -39,7 +40,7 @@ export async function issueFiscalDocumentForOrder(admin: SupabaseClient<Database
 
   const { data: order } = await admin
     .from("orders")
-    .select("id, grand_total, billing_address:customer_addresses!orders_billing_address_id_fkey(*)")
+    .select("id, grand_total, shipping_total, billing_address:customer_addresses!orders_billing_address_id_fkey(*)")
     .eq("id", orderId)
     .maybeSingle();
   if (!order) return;
@@ -66,12 +67,19 @@ export async function issueFiscalDocumentForOrder(admin: SupabaseClient<Database
         certified_email: billingAddress?.pec_email ?? undefined,
         ei_code: billingAddress?.sdi_code ?? undefined,
       },
-      items: (items ?? []).map((item) => ({
-        name: item.name_snapshot,
-        qty: item.quantity,
-        net_price: item.unit_price,
-        vat: { id: 0, value: item.vat_rate },
-      })),
+      items: [
+        ...(items ?? []).map((item) => ({
+          name: item.name_snapshot,
+          qty: item.quantity,
+          net_price: item.unit_price,
+          vat: { id: 0, value: item.vat_rate },
+        })),
+        // Shipping is part of the amount paid, so it must be on the document or the payments
+        // wouldn't reconcile with the total due.
+        ...(order.shipping_total > 0
+          ? [{ name: "Shipping", qty: 1, net_price: order.shipping_total, vat: { id: 0, value: SHIPPING_VAT_RATE } }]
+          : []),
+      ],
       eInvoice: documentType === "invoice",
       grossAmount: order.grand_total,
     });

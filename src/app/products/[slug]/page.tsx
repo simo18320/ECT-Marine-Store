@@ -9,7 +9,7 @@ import { VariantSelector } from "@/components/product/variant-selector";
 import { SamplingKitDetails } from "@/components/product/sampling-kit-details";
 import { getProductBySlug } from "@/lib/products/queries";
 import { getAvailabilityLabel } from "@/lib/inventory/rules";
-import { getStoreSettings } from "@/lib/settings/queries";
+import { getShippingSettings, getStoreSettings } from "@/lib/settings/queries";
 import { formatCurrency, withVat } from "@/lib/utils";
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -23,6 +23,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const specs = Object.entries(rawSpecs);
 
   const settings = await getStoreSettings();
+  const shippingSettings = await getShippingSettings();
   const stockLabel = getAvailabilityLabel(
     stockStatus,
     product.delivery_estimate,
@@ -85,7 +86,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               {formatCurrency(product.selling_price)} excl. VAT (business customers)
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              {product.shipping_cost ? `+ ${formatCurrency(product.shipping_cost)} shipping` : "Free shipping"}
+              Free shipping in Italy from {formatCurrency(shippingSettings.freeThreshold)} · outside Italy by quote
             </p>
             <span
               className={

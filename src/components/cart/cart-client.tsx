@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCart } from "@/lib/cart/cart-context";
 import { formatCurrency, withVat } from "@/lib/utils";
 
-export function CartClient() {
+export function CartClient({ shippingSettings }: { shippingSettings: { freeThreshold: number; feeItaly: number } }) {
   const { items, updateQuantity, removeItem, subtotal, vatTotal, grandTotal } = useCart();
 
   return (
@@ -67,6 +67,10 @@ export function CartClient() {
                 <dd className="font-heading text-lg font-medium">{formatCurrency(grandTotal)}</dd>
               </div>
             </dl>
+            <p className="mt-3 text-xs text-muted-foreground">
+              Shipping is calculated at checkout: free in Italy from {formatCurrency(shippingSettings.freeThreshold)}
+              ; outside Italy by quote.
+            </p>
             <Link
               href="/checkout"
               className="mt-5 block w-full rounded-full bg-primary px-4 py-3 text-center text-sm font-medium text-primary-foreground shadow-sm transition hover:shadow-md"

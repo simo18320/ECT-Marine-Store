@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { computeOrderTotals, generateOrderNumber } from "./rules";
+import type { ShippingQuote } from "./shipping";
 
 export interface CheckoutLineInput {
   productId: string;
@@ -83,6 +84,7 @@ export interface CreatePendingOrderInput {
   customerId: string;
   addressId: string;
   lines: PricedLine[];
+  shipping: ShippingQuote;
   termsAcceptedAt: Date;
 }
 
@@ -96,6 +98,7 @@ export async function createPendingOrder({
   customerId,
   addressId,
   lines,
+  shipping,
   termsAcceptedAt,
 }: CreatePendingOrderInput): Promise<PendingOrder> {
   const admin = createAdminClient();
@@ -109,8 +112,9 @@ export async function createPendingOrder({
       customer_id: customerId,
       status: "pending",
       subtotal: totals.subtotal,
-      vat_total: totals.vatTotal,
-      grand_total: totals.grandTotal,
+      shipping_total: shipping.net,
+      vat_total: Math.round((totals.vatTotal + shipping.vat) * 100) / 100,
+      grand_total: Math.round((totals.grandTotal + shipping.net + shipping.vat) * 100) / 100,
       shipping_address_id: addressId,
       billing_address_id: addressId,
       terms_accepted_at: termsAcceptedAt.toISOString(),

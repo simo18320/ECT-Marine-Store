@@ -6,12 +6,22 @@ import { useCart } from "@/lib/cart/cart-context";
 import { startCheckout } from "@/lib/orders/checkout-actions";
 import { formatCurrency, withVat } from "@/lib/utils";
 import type { Address } from "@/lib/addresses/queries";
+import { computeShipping, type ShippingSettings } from "@/lib/orders/shipping";
+import { requestShippingQuote } from "@/lib/shipping-quotes/actions";
 
-export function CheckoutClient({ addresses }: { addresses: Address[] }) {
+export function CheckoutClient({
+  addresses,
+  shippingSettings,
+}: {
+  addresses: Address[];
+  shippingSettings: ShippingSettings;
+}) {
   const { items, subtotal, vatTotal, grandTotal } = useCart();
   const defaultAddress = addresses.find((a) => a.is_default) ?? addresses[0];
   const [addressId, setAddressId] = useState(defaultAddress?.id ?? "");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [quoteMessage, setQuoteMessage] = useState("");
+  const [quoteSent, setQuoteSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -24,6 +34,24 @@ export function CheckoutClient({ addresses }: { addresses: Address[] }) {
         acceptedTerms,
       );
       if (result?.error) setError(result.error);
+    });
+  }
+
+  const selectedAddress = addresses.find((a) => a.id === addressId);
+  const shipping = computeShipping({ goodsGross: grandTotal, country: selectedAddress?.country, settings: shippingSettings });
+  const totalVat = vatTotal + shipping.vat;
+  const totalDue = grandTotal + shipping.net + shipping.vat;
+
+  function handleQuote() {
+    setError(null);
+    startTransition(async () => {
+      const result = await requestShippingQuote(
+        items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+        addressId,
+        quoteMessage,
+      );
+      if (result.error) setError(result.error);
+      else setQuoteSent(true);
     });
   }
 
@@ -96,17 +124,61 @@ export function CheckoutClient({ addresses }: { addresses: Address[] }) {
             <dd>{formatCurrency(subtotal)}</dd>
           </div>
           <div className="flex justify-between">
+            <dt className="text-muted-foreground">Shipping (excl. VAT)</dt>
+            <dd>
+              {shipping.kind === "free" ? "Free" : shipping.kind === "fee" ? formatCurrency(shipping.net) : "By quote"}
+            </dd>
+          </div>
+          <div className="flex justify-between">
             <dt className="text-muted-foreground">VAT</dt>
-            <dd>{formatCurrency(vatTotal)}</dd>
+            <dd>{formatCurrency(totalVat)}</dd>
           </div>
           <div className="flex justify-between border-t border-border pt-2">
             <dt className="font-medium">Total (incl. VAT)</dt>
-            <dd className="font-heading text-lg font-medium">{formatCurrency(grandTotal)}</dd>
+            <dd className="font-heading text-lg font-medium">{formatCurrency(totalDue)}</dd>
           </div>
         </dl>
+        {shipping.kind === "free" && (
+          <p className="mt-2 text-xs text-status-good">Free shipping in Italy on orders over {formatCurrency(shippingSettings.freeThreshold)}.</p>
+        )}
+        {shipping.kind === "fee" && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Free shipping in Italy from {formatCurrency(shippingSettings.freeThreshold)}.
+          </p>
+        )}
 
         {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
 
+        {shipping.kind === "quote" ? (
+          quoteSent ? (
+            <p className="mt-4 rounded-md border border-status-good/40 bg-status-good/10 px-3 py-2 text-sm text-status-good">
+              Request sent. We will email you the shipping cost and how to pay.
+            </p>
+          ) : (
+            <div className="mt-4 text-sm">
+              <p className="text-muted-foreground">
+                Shipping to {selectedAddress?.country} is quoted individually — you can&rsquo;t pay online for this
+                destination. Send us your order and we will reply with the shipping cost.
+              </p>
+              <textarea
+                value={quoteMessage}
+                onChange={(e) => setQuoteMessage(e.target.value)}
+                rows={2}
+                placeholder="Notes (optional)"
+                className="mt-3 w-full rounded-md border border-input bg-background px-3 py-2"
+              />
+              <button
+                type="button"
+                onClick={handleQuote}
+                disabled={isPending || !addressId}
+                className="mt-3 w-full rounded-full bg-primary px-4 py-3 text-sm font-medium text-primary-foreground shadow-sm transition hover:shadow-md disabled:opacity-50"
+              >
+                {isPending ? "Sending…" : "Request a shipping quote"}
+              </button>
+            </div>
+          )
+        ) : (
+          <>
         <label className="mt-5 flex items-start gap-2 text-xs text-muted-foreground">
           <input
             type="checkbox"
@@ -135,6 +207,8 @@ export function CheckoutClient({ addresses }: { addresses: Address[] }) {
         >
           {isPending ? "Redirecting to payment…" : "Place order — obligation to pay"}
         </button>
+          </>
+        )}
       </aside>
     </div>
   );

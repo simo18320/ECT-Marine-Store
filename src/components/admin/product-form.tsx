@@ -301,13 +301,13 @@ export function ProductForm({ action, defaultValues, categories, brands, submitL
 
       <div className="grid grid-cols-2 gap-4">
         <label className="flex flex-col gap-1 text-sm">
-          Shipping cost (€)
+          Shipping cost (€) — informational only
           <input
             name="shipping_cost"
             type="number"
             step="0.01"
             defaultValue={defaultValues?.shipping_cost ?? ""}
-            placeholder="Leave blank for none"
+            placeholder="Not charged: shipping is set in Settings"
             className="rounded-md border border-input bg-card px-3 py-2"
           />
         </label>
