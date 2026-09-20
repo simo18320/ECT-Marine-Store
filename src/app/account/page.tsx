@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { SignOutButton } from "./sign-out-button";
+import { PrivacyRequestForm } from "@/components/account/privacy-request-form";
 
 export default async function AccountPage() {
   const supabase = await createClient();
@@ -91,6 +92,26 @@ export default async function AccountPage() {
             </Link>
           )}
         </div>
+
+        <section className="mt-12 border-t border-border pt-8">
+          <h2 className="text-lg font-medium">Privacy</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Download a copy of your data, or ask us to delete or correct it. Order and invoice records are
+            kept for the period required by law.{" "}
+            <Link href="/privacy" className="text-primary hover:underline">
+              Privacy Policy
+            </Link>
+          </p>
+          <a
+            href="/account/export"
+            className="mt-4 inline-block rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-secondary"
+          >
+            Download my data (JSON)
+          </a>
+          <div className="mt-6">
+            <PrivacyRequestForm />
+          </div>
+        </section>
 
         <div className="mt-6 rounded-md border border-dashed border-border p-4 text-sm text-muted-foreground">
           Maintenance history and service requests land here in a later phase (see{" "}

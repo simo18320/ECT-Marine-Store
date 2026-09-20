@@ -16,6 +16,7 @@ const NAV_LINKS = [
   { href: "/admin/customers", label: "Customers" },
   { href: "/admin/service-requests", label: "Service requests" },
   { href: "/admin/product-requests", label: "Product requests" },
+  { href: "/admin/legal-requests", label: "Legal requests" },
   { href: "/admin/settings", label: "Settings" },
 ];
 

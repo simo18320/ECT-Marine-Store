@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getShipmentForOrder } from "@/lib/shipments/queries";
+import { WithdrawalForm } from "@/components/account/withdrawal-form";
 import { formatCurrency, withVat } from "@/lib/utils";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -49,6 +50,12 @@ export default async function OrderDetailPage({
   if (!order) notFound();
 
   const shipment = await getShipmentForOrder(order.id);
+  const { data: withdrawal } = await supabase
+    .from("withdrawal_requests")
+    .select("created_at")
+    .eq("order_id", order.id)
+    .maybeSingle();
+  const canWithdraw = ["paid", "processing", "shipped", "delivered"].includes(order.status);
 
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-16">
@@ -131,6 +138,15 @@ export default async function OrderDetailPage({
           <dd>{formatCurrency(order.grand_total)}</dd>
         </div>
       </dl>
+
+      {withdrawal ? (
+        <p className="mt-8 border-t border-border pt-4 text-sm text-muted-foreground">
+          Withdrawal request sent on {new Date(withdrawal.created_at).toLocaleDateString("en-GB")}. We will contact you
+          with the return instructions.
+        </p>
+      ) : (
+        canWithdraw && <WithdrawalForm orderNumber={order.order_number} />
+      )}
     </main>
   );
 }
