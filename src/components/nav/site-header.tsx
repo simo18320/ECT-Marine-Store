@@ -9,7 +9,6 @@ import { getCategoryTree, getTopLevelCategoryFacets } from "@/lib/products/queri
 
 const EXTRA_LINKS = [
   { href: "/find-product", label: "Find the right product" },
-  { href: "/assistant", label: "Ask ECT" },
   { href: "/my-yacht", label: "My Yacht" },
 ];
 

@@ -22,7 +22,10 @@ export default async function FindProductPage({
         <h1 className="text-3xl font-medium">Find the right product</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Tell us what you&rsquo;re trying to solve and we&rsquo;ll recommend compatible products
-          — never a guess, only products with verified compatibility.
+          — never a guess, only products with verified compatibility.{" "}
+          <Link href="/assistant" className="font-medium text-primary hover:underline">
+            Prefer to describe it in your own words? Ask ECT →
+          </Link>
         </p>
 
         {!problem ? (

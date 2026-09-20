@@ -14,9 +14,6 @@ export function SiteFooter() {
           <Link href="/find-product" className="hover:text-foreground">
             Find the right product
           </Link>
-          <Link href="/assistant" className="hover:text-foreground">
-            Ask ECT
-          </Link>
           <Link href="/my-yacht" className="hover:text-foreground">
             My Yacht
           </Link>
