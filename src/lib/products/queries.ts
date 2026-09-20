@@ -38,6 +38,7 @@ export interface ProductVariantOption {
   id: string;
   slug: string;
   selling_price: number;
+  vat_rate: number;
   technical_specs: Json;
 }
 
@@ -345,7 +346,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail | nu
     product.variant_group_id
       ? supabase
           .from("products")
-          .select("id, slug, selling_price, technical_specs")
+          .select("id, slug, selling_price, vat_rate, technical_specs")
           .eq("variant_group_id", product.variant_group_id)
           .eq("is_active", true)
           .order("selling_price", { ascending: true })

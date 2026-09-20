@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCart } from "@/lib/cart/cart-context";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, withVat } from "@/lib/utils";
 
 export function CartClient() {
   const { items, updateQuantity, removeItem, subtotal, vatTotal, grandTotal } = useCart();
@@ -38,7 +38,7 @@ export function CartClient() {
                   className="w-16 rounded-md border border-input bg-card px-2 py-1.5 text-sm"
                 />
                 <span className="w-20 text-right text-sm font-medium">
-                  {formatCurrency(item.unitPrice * item.quantity)}
+                  {formatCurrency(withVat(item.unitPrice * item.quantity, item.vatRate))}
                 </span>
                 <button
                   type="button"
@@ -55,7 +55,7 @@ export function CartClient() {
             <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Order summary</h2>
             <dl className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <dt className="text-muted-foreground">Subtotal</dt>
+                <dt className="text-muted-foreground">Subtotal (excl. VAT)</dt>
                 <dd>{formatCurrency(subtotal)}</dd>
               </div>
               <div className="flex justify-between">
@@ -63,7 +63,7 @@ export function CartClient() {
                 <dd>{formatCurrency(vatTotal)}</dd>
               </div>
               <div className="flex justify-between border-t border-border pt-2">
-                <dt className="font-medium">Total</dt>
+                <dt className="font-medium">Total (incl. VAT)</dt>
                 <dd className="font-heading text-lg font-medium">{formatCurrency(grandTotal)}</dd>
               </div>
             </dl>

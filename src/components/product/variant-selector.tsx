@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, withVat } from "@/lib/utils";
 import type { ProductVariantOption } from "@/lib/products/queries";
 
 // Labels a sibling by whatever distinguishes it (size and/or filter class) — same convention
@@ -40,7 +40,7 @@ export function VariantSelector({
       >
         {variants.map((v) => (
           <option key={v.id} value={v.id}>
-            {variantLabel(v)} — {formatCurrency(v.selling_price)}
+            {variantLabel(v)} — {formatCurrency(withVat(v.selling_price, v.vat_rate))} incl. VAT
           </option>
         ))}
       </select>

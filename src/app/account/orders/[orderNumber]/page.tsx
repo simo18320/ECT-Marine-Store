@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getShipmentForOrder } from "@/lib/shipments/queries";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, withVat } from "@/lib/utils";
 
 const STATUS_LABEL: Record<string, string> = {
   pending: "Payment pending",
@@ -41,7 +41,7 @@ export default async function OrderDetailPage({
   const { data: order } = await supabase
     .from("orders")
     .select(
-      "id, order_number, status, subtotal, vat_total, shipping_total, grand_total, created_at, order_items(name_snapshot, sku_snapshot, quantity, unit_price, line_total)",
+      "id, order_number, status, subtotal, vat_total, shipping_total, grand_total, created_at, order_items(name_snapshot, sku_snapshot, quantity, unit_price, line_total, vat_rate)",
     )
     .eq("order_number", orderNumber)
     .maybeSingle();
@@ -103,17 +103,17 @@ export default async function OrderDetailPage({
               <span className="font-medium">{item.name_snapshot}</span>
               <br />
               <span className="text-muted-foreground">
-                {item.sku_snapshot} · {item.quantity}× {formatCurrency(item.unit_price)}
+                {item.sku_snapshot} · {item.quantity}× {formatCurrency(withVat(item.unit_price, item.vat_rate))}
               </span>
             </span>
-            <span className="font-medium">{formatCurrency(item.line_total)}</span>
+            <span className="font-medium">{formatCurrency(withVat(item.line_total, item.vat_rate))}</span>
           </li>
         ))}
       </ul>
 
       <dl className="mt-6 space-y-2 border-t border-border pt-4 text-sm">
         <div className="flex justify-between">
-          <dt className="text-muted-foreground">Subtotal</dt>
+          <dt className="text-muted-foreground">Subtotal (excl. VAT)</dt>
           <dd>{formatCurrency(order.subtotal)}</dd>
         </div>
         <div className="flex justify-between">
@@ -127,7 +127,7 @@ export default async function OrderDetailPage({
           </div>
         )}
         <div className="flex justify-between border-t border-border pt-2 font-semibold">
-          <dt>Total</dt>
+          <dt>Total (incl. VAT)</dt>
           <dd>{formatCurrency(order.grand_total)}</dd>
         </div>
       </dl>

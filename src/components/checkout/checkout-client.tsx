@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useCart } from "@/lib/cart/cart-context";
 import { startCheckout } from "@/lib/orders/checkout-actions";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, withVat } from "@/lib/utils";
 import type { Address } from "@/lib/addresses/queries";
 
 export function CheckoutClient({ addresses }: { addresses: Address[] }) {
@@ -82,7 +82,7 @@ export function CheckoutClient({ addresses }: { addresses: Address[] }) {
               <span>
                 {item.quantity}× {item.name}
               </span>
-              <span>{formatCurrency(item.unitPrice * item.quantity)}</span>
+              <span>{formatCurrency(withVat(item.unitPrice * item.quantity, item.vatRate))}</span>
             </li>
           ))}
         </ul>
@@ -92,7 +92,7 @@ export function CheckoutClient({ addresses }: { addresses: Address[] }) {
         <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Order summary</h2>
         <dl className="space-y-2 text-sm">
           <div className="flex justify-between">
-            <dt className="text-muted-foreground">Subtotal</dt>
+            <dt className="text-muted-foreground">Subtotal (excl. VAT)</dt>
             <dd>{formatCurrency(subtotal)}</dd>
           </div>
           <div className="flex justify-between">
@@ -100,7 +100,7 @@ export function CheckoutClient({ addresses }: { addresses: Address[] }) {
             <dd>{formatCurrency(vatTotal)}</dd>
           </div>
           <div className="flex justify-between border-t border-border pt-2">
-            <dt className="font-medium">Total</dt>
+            <dt className="font-medium">Total (incl. VAT)</dt>
             <dd className="font-heading text-lg font-medium">{formatCurrency(grandTotal)}</dd>
           </div>
         </dl>

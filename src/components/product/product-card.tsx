@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, withVat } from "@/lib/utils";
 import { getAvailabilityLabel } from "@/lib/inventory/rules";
 import { getStoreSettings } from "@/lib/settings/queries";
 import type { ProductListItem } from "@/lib/products/queries";
@@ -38,7 +38,14 @@ export async function ProductCard({ product }: { product: ProductListItem }) {
         <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{product.short_description}</p>
       )}
       <div className="mt-auto flex items-center justify-between pt-3">
-        <span className="font-heading text-lg font-medium">{formatCurrency(product.selling_price)}</span>
+        <span>
+          <span className="font-heading text-lg font-medium">
+            {formatCurrency(withVat(product.selling_price, product.vat_rate))}
+          </span>
+          <span className="block text-[11px] leading-tight text-muted-foreground">
+            incl. VAT · {formatCurrency(product.selling_price)} excl.
+          </span>
+        </span>
         <span
           className={
             product.delivery_estimate || (status === "out_of_stock" && settings.restock_mode)

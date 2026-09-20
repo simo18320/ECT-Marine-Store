@@ -10,7 +10,7 @@ import { SamplingKitDetails } from "@/components/product/sampling-kit-details";
 import { getProductBySlug } from "@/lib/products/queries";
 import { getAvailabilityLabel } from "@/lib/inventory/rules";
 import { getStoreSettings } from "@/lib/settings/queries";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, withVat } from "@/lib/utils";
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -76,9 +76,14 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             )}
 
             <div className="mt-6 flex items-baseline gap-3">
-              <span className="font-heading text-3xl font-medium">{formatCurrency(product.selling_price)}</span>
-              <span className="text-sm text-muted-foreground">excl. VAT ({product.vat_rate}%)</span>
+              <span className="font-heading text-3xl font-medium">
+                {formatCurrency(withVat(product.selling_price, product.vat_rate))}
+              </span>
+              <span className="text-sm text-muted-foreground">incl. VAT ({product.vat_rate}%)</span>
             </div>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {formatCurrency(product.selling_price)} excl. VAT (business customers)
+            </p>
             <p className="mt-1 text-sm text-muted-foreground">
               {product.shipping_cost ? `+ ${formatCurrency(product.shipping_cost)} shipping` : "Free shipping"}
             </p>

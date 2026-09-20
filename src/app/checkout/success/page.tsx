@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, withVat } from "@/lib/utils";
 import { ClearCartOnMount } from "@/components/cart/clear-cart-on-mount";
 
 export default async function CheckoutSuccessPage({
@@ -14,7 +14,7 @@ export default async function CheckoutSuccessPage({
   const { data: order } = orderNumber
     ? await supabase
         .from("orders")
-        .select("order_number, status, grand_total, order_items(name_snapshot, quantity, line_total)")
+        .select("order_number, status, grand_total, order_items(name_snapshot, quantity, line_total, vat_rate)")
         .eq("order_number", orderNumber)
         .maybeSingle()
     : { data: null };
@@ -61,7 +61,7 @@ export default async function CheckoutSuccessPage({
               <span>
                 {item.quantity}× {item.name_snapshot}
               </span>
-              <span>{formatCurrency(item.line_total)}</span>
+              <span>{formatCurrency(withVat(item.line_total, item.vat_rate))}</span>
             </li>
           ))}
         </ul>

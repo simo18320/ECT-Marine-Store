@@ -17,8 +17,7 @@ export default function TermsPage() {
       <h2>1. Products and prices</h2>
       <p>
         Product descriptions, specifications and availability are those shown on each product page
-        when you order. Prices are in euro. VAT is shown separately and added at checkout at the
-        applicable rate. Delivery costs, where any, are shown before you confirm the order.
+        when you order. Prices are in euro and shown including VAT at the applicable rate; the price excluding VAT is also shown for business customers, and the order summary breaks down net amount and VAT. Delivery costs, where any, are shown before you confirm the order.
       </p>
 
       <h2>2. Placing an order and contract</h2>
