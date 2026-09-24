@@ -9,6 +9,7 @@ import {
   updateProduct,
   uploadProductImage,
 } from "@/lib/admin/product-actions";
+import { loadShippingContext } from "@/lib/shipping/data";
 import { ProductForm } from "@/components/admin/product-form";
 import { ProductImagesSection } from "@/components/admin/product-images-section";
 
@@ -16,10 +17,11 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
   await requireAdmin();
   const { id } = await params;
 
-  const [result, categories, brands] = await Promise.all([
+  const [result, categories, brands, shippingContext] = await Promise.all([
     getProductForEdit(id),
     listCategoriesFlat(),
     listBrands(),
+    loadShippingContext(),
   ]);
 
   if (!result) notFound();
@@ -41,6 +43,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
         categories={categories}
         brands={brands}
         submitLabel="Save changes"
+        shippingContext={shippingContext}
       />
 
       <ProductImagesSection

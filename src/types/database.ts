@@ -1008,6 +1008,7 @@ export type Database = {
           product_id: string
           quantity: number
           sku_snapshot: string
+          unit_cost_snapshot: number | null
           unit_price: number
           variant_id: string | null
           vat_rate: number
@@ -1020,6 +1021,7 @@ export type Database = {
           product_id: string
           quantity: number
           sku_snapshot: string
+          unit_cost_snapshot?: number | null
           unit_price: number
           variant_id?: string | null
           vat_rate: number
@@ -1032,6 +1034,7 @@ export type Database = {
           product_id?: string
           quantity?: number
           sku_snapshot?: string
+          unit_cost_snapshot?: number | null
           unit_price?: number
           variant_id?: string | null
           vat_rate?: number
@@ -1056,6 +1059,108 @@ export type Database = {
             columns: ["variant_id"]
             isOneToOne: false
             referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_profitability: {
+        Row: {
+          computed_at: string
+          customer_shipping_at_order: number
+          flags: string[]
+          free_shipping_at_order: boolean
+          free_shipping_note: string | null
+          gross_profit: number | null
+          id: string
+          margin_status: string
+          min_margin_percent: number | null
+          missing_cost_data: boolean
+          net_margin_at_order: number | null
+          net_profit: number | null
+          order_id: string
+          override_active: boolean
+          override_at: string | null
+          override_by: string | null
+          override_price: number | null
+          override_reason: string | null
+          packaging_cost_at_order: number
+          payment_fee_at_order: number
+          product_cost: number | null
+          revenue_net: number
+          shipping_class_at_order: string | null
+          shipping_cost_at_order: number
+          shipping_subsidy: number
+          shipping_zone: string
+        }
+        Insert: {
+          computed_at?: string
+          customer_shipping_at_order?: number
+          flags?: string[]
+          free_shipping_at_order?: boolean
+          free_shipping_note?: string | null
+          gross_profit?: number | null
+          id?: string
+          margin_status: string
+          min_margin_percent?: number | null
+          missing_cost_data?: boolean
+          net_margin_at_order?: number | null
+          net_profit?: number | null
+          order_id: string
+          override_active?: boolean
+          override_at?: string | null
+          override_by?: string | null
+          override_price?: number | null
+          override_reason?: string | null
+          packaging_cost_at_order?: number
+          payment_fee_at_order?: number
+          product_cost?: number | null
+          revenue_net?: number
+          shipping_class_at_order?: string | null
+          shipping_cost_at_order?: number
+          shipping_subsidy?: number
+          shipping_zone: string
+        }
+        Update: {
+          computed_at?: string
+          customer_shipping_at_order?: number
+          flags?: string[]
+          free_shipping_at_order?: boolean
+          free_shipping_note?: string | null
+          gross_profit?: number | null
+          id?: string
+          margin_status?: string
+          min_margin_percent?: number | null
+          missing_cost_data?: boolean
+          net_margin_at_order?: number | null
+          net_profit?: number | null
+          order_id?: string
+          override_active?: boolean
+          override_at?: string | null
+          override_by?: string | null
+          override_price?: number | null
+          override_reason?: string | null
+          packaging_cost_at_order?: number
+          payment_fee_at_order?: number
+          product_cost?: number | null
+          revenue_net?: number
+          shipping_class_at_order?: string | null
+          shipping_cost_at_order?: number
+          shipping_subsidy?: number
+          shipping_zone?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_profitability_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_profitability_override_by_fkey"
+            columns: ["override_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1595,20 +1700,32 @@ export type Database = {
             | null
           description: string | null
           dimensions: Json | null
+          free_shipping_eligible: boolean
           id: string
           is_active: boolean
           is_bundle: boolean
+          minimum_margin_amount: number | null
+          minimum_margin_percent: number | null
           name: string
           operating_conditions: Json | null
+          packaging_cost: number | null
           purchase_cost: number | null
           replacement_interval_days: number | null
           requires_compliance_ack: boolean
           search_vector: unknown
           selling_price: number
+          shipping_class: string | null
           shipping_cost: number | null
+          shipping_cost_eu: number | null
+          shipping_cost_int: number | null
+          shipping_cost_it: number | null
+          shipping_cost_uk: number | null
+          shipping_override: boolean
+          shipping_override_cost: number | null
           short_description: string | null
           sku: string
           slug: string
+          special_shipping_required: boolean
           technical_specs: Json
           unit: string
           updated_at: string
@@ -1627,20 +1744,32 @@ export type Database = {
             | null
           description?: string | null
           dimensions?: Json | null
+          free_shipping_eligible?: boolean
           id?: string
           is_active?: boolean
           is_bundle?: boolean
+          minimum_margin_amount?: number | null
+          minimum_margin_percent?: number | null
           name: string
           operating_conditions?: Json | null
+          packaging_cost?: number | null
           purchase_cost?: number | null
           replacement_interval_days?: number | null
           requires_compliance_ack?: boolean
           search_vector?: unknown
           selling_price: number
+          shipping_class?: string | null
           shipping_cost?: number | null
+          shipping_cost_eu?: number | null
+          shipping_cost_int?: number | null
+          shipping_cost_it?: number | null
+          shipping_cost_uk?: number | null
+          shipping_override?: boolean
+          shipping_override_cost?: number | null
           short_description?: string | null
           sku: string
           slug: string
+          special_shipping_required?: boolean
           technical_specs?: Json
           unit?: string
           updated_at?: string
@@ -1659,20 +1788,32 @@ export type Database = {
             | null
           description?: string | null
           dimensions?: Json | null
+          free_shipping_eligible?: boolean
           id?: string
           is_active?: boolean
           is_bundle?: boolean
+          minimum_margin_amount?: number | null
+          minimum_margin_percent?: number | null
           name?: string
           operating_conditions?: Json | null
+          packaging_cost?: number | null
           purchase_cost?: number | null
           replacement_interval_days?: number | null
           requires_compliance_ack?: boolean
           search_vector?: unknown
           selling_price?: number
+          shipping_class?: string | null
           shipping_cost?: number | null
+          shipping_cost_eu?: number | null
+          shipping_cost_int?: number | null
+          shipping_cost_it?: number | null
+          shipping_cost_uk?: number | null
+          shipping_override?: boolean
+          shipping_override_cost?: number | null
           short_description?: string | null
           sku?: string
           slug?: string
+          special_shipping_required?: boolean
           technical_specs?: Json
           unit?: string
           updated_at?: string
@@ -2066,6 +2207,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      shipping_rates: {
+        Row: {
+          customer_charge: number | null
+          ect_cost: number | null
+          mode: string
+          shipping_class: string
+          zone: string
+        }
+        Insert: {
+          customer_charge?: number | null
+          ect_cost?: number | null
+          mode?: string
+          shipping_class: string
+          zone: string
+        }
+        Update: {
+          customer_charge?: number | null
+          ect_cost?: number | null
+          mode?: string
+          shipping_class?: string
+          zone?: string
+        }
+        Relationships: []
+      }
+      shipping_settings: {
+        Row: {
+          default_minimum_net_margin_percent: number
+          default_packaging_cost: number
+          free_shipping_target: number
+          handling_fee_per_extra_kg: number
+          id: boolean
+          included_weight_kg: number
+          payment_fee_percent: number
+          payment_fixed_fee: number
+          payment_provider: string
+          updated_at: string
+        }
+        Insert: {
+          default_minimum_net_margin_percent?: number
+          default_packaging_cost?: number
+          free_shipping_target?: number
+          handling_fee_per_extra_kg?: number
+          id?: boolean
+          included_weight_kg?: number
+          payment_fee_percent?: number
+          payment_fixed_fee?: number
+          payment_provider?: string
+          updated_at?: string
+        }
+        Update: {
+          default_minimum_net_margin_percent?: number
+          default_packaging_cost?: number
+          free_shipping_target?: number
+          handling_fee_per_extra_kg?: number
+          id?: boolean
+          included_weight_kg?: number
+          payment_fee_percent?: number
+          payment_fixed_fee?: number
+          payment_provider?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       store_settings: {
         Row: {

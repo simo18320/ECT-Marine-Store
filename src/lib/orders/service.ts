@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { computeOrderTotals, generateOrderNumber } from "./rules";
-import type { ShippingQuote } from "./shipping";
+import type { EngineResult } from "@/lib/shipping/engine";
+import { buildProfitabilityRow } from "@/lib/shipping/snapshot";
 
 export interface CheckoutLineInput {
   productId: string;
@@ -84,7 +85,10 @@ export interface CreatePendingOrderInput {
   customerId: string;
   addressId: string;
   lines: PricedLine[];
-  shipping: ShippingQuote;
+  /** The engine's decision for this order (never a quote: quotes cannot be paid online). */
+  shipping: EngineResult;
+  /** Purchase cost per product at the time of the order, for the profit snapshot. */
+  unitCosts: Map<string, number | null>;
   termsAcceptedAt: Date;
 }
 
@@ -99,6 +103,7 @@ export async function createPendingOrder({
   addressId,
   lines,
   shipping,
+  unitCosts,
   termsAcceptedAt,
 }: CreatePendingOrderInput): Promise<PendingOrder> {
   const admin = createAdminClient();
@@ -112,9 +117,10 @@ export async function createPendingOrder({
       customer_id: customerId,
       status: "pending",
       subtotal: totals.subtotal,
-      shipping_total: shipping.net,
-      vat_total: Math.round((totals.vatTotal + shipping.vat) * 100) / 100,
-      grand_total: Math.round((totals.grandTotal + shipping.net + shipping.vat) * 100) / 100,
+      shipping_total: shipping.customerShippingNet,
+      vat_total: Math.round((totals.vatTotal + shipping.customerShippingVat) * 100) / 100,
+      grand_total:
+        Math.round((totals.grandTotal + shipping.customerShippingNet + shipping.customerShippingVat) * 100) / 100,
       shipping_address_id: addressId,
       billing_address_id: addressId,
       terms_accepted_at: termsAcceptedAt.toISOString(),
@@ -134,10 +140,19 @@ export async function createPendingOrder({
       quantity: line.quantity,
       vat_rate: line.vatRate,
       line_total: line.lineTotal,
+      unit_cost_snapshot: unitCosts.get(line.productId) ?? null,
     })),
   );
 
   if (itemsError) throw new CheckoutError("Could not save order items.");
+
+  const snapshot = buildProfitabilityRow(order.id, shipping);
+  if (snapshot) {
+    const { error: snapshotError } = await admin.from("order_profitability").insert(snapshot);
+    // The order stays valid; a missing snapshot only means the admin panel recomputes nothing
+    // for it, which is worth a log line but must never block a customer's payment.
+    if (snapshotError) console.error("Could not save order profitability snapshot:", snapshotError);
+  }
 
   return { id: order.id, orderNumber: order.order_number, grandTotal: order.grand_total };
 }

@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import type { Database } from "@/types/database";
 import type { ProductFormState } from "@/lib/admin/product-actions";
+import { ProductShippingSection, type ShippingContext } from "./product-shipping-section";
 
 type Product = Database["public"]["Tables"]["products"]["Row"];
 
@@ -50,9 +51,10 @@ interface ProductFormProps {
   categories: { id: string; label: string }[];
   brands: { id: string; name: string }[];
   submitLabel: string;
+  shippingContext: ShippingContext;
 }
 
-export function ProductForm({ action, defaultValues, categories, brands, submitLabel }: ProductFormProps) {
+export function ProductForm({ action, defaultValues, categories, brands, submitLabel, shippingContext }: ProductFormProps) {
   const [state, formAction, isPending] = useActionState(action, {});
   const specs = (defaultValues?.technical_specs as Record<string, unknown>) ?? {};
 
@@ -301,17 +303,6 @@ export function ProductForm({ action, defaultValues, categories, brands, submitL
 
       <div className="grid grid-cols-2 gap-4">
         <label className="flex flex-col gap-1 text-sm">
-          Shipping cost (€) — informational only
-          <input
-            name="shipping_cost"
-            type="number"
-            step="0.01"
-            defaultValue={defaultValues?.shipping_cost ?? ""}
-            placeholder="Not charged: shipping is set in Settings"
-            className="rounded-md border border-input bg-card px-3 py-2"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
           Delivery estimate
           <select
             name="delivery_estimate"
@@ -326,6 +317,8 @@ export function ProductForm({ action, defaultValues, categories, brands, submitL
           </select>
         </label>
       </div>
+
+      <ProductShippingSection defaultValues={defaultValues} context={shippingContext} />
 
       <label className="flex flex-col gap-1 text-sm">
         Certifications (comma-separated)

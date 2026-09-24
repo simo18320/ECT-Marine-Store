@@ -1,21 +1,16 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { useCart } from "@/lib/cart/cart-context";
 import { startCheckout } from "@/lib/orders/checkout-actions";
 import { formatCurrency, withVat } from "@/lib/utils";
 import type { Address } from "@/lib/addresses/queries";
-import { computeShipping, type ShippingSettings } from "@/lib/orders/shipping";
+import { previewShipping } from "@/lib/shipping/actions";
+import type { CustomerShippingView } from "@/lib/shipping/provider";
 import { requestShippingQuote } from "@/lib/shipping-quotes/actions";
 
-export function CheckoutClient({
-  addresses,
-  shippingSettings,
-}: {
-  addresses: Address[];
-  shippingSettings: ShippingSettings;
-}) {
+export function CheckoutClient({ addresses }: { addresses: Address[] }) {
   const { items, subtotal, vatTotal, grandTotal } = useCart();
   const defaultAddress = addresses.find((a) => a.is_default) ?? addresses[0];
   const [addressId, setAddressId] = useState(defaultAddress?.id ?? "");
@@ -38,9 +33,30 @@ export function CheckoutClient({
   }
 
   const selectedAddress = addresses.find((a) => a.id === addressId);
-  const shipping = computeShipping({ goodsGross: grandTotal, country: selectedAddress?.country, settings: shippingSettings });
-  const totalVat = vatTotal + shipping.vat;
-  const totalDue = grandTotal + shipping.net + shipping.vat;
+  // The server decides shipping (prices, class, margin rules); this only displays its answer.
+  const [preview, setPreview] = useState<{ key: string; view: CustomerShippingView | null } | null>(null);
+  const cartKey = items.map((i) => `${i.productId}:${i.quantity}`).join(",");
+  const country = selectedAddress?.country;
+  const previewKey = `${cartKey}|${country ?? ""}`;
+  // Stale answers (cart or address changed since) are ignored until the new one arrives.
+  const shipping = preview?.key === previewKey ? preview.view : null;
+  useEffect(() => {
+    let cancelled = false;
+    if (items.length === 0) return;
+    previewShipping(
+      items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+      country,
+    ).then((view) => {
+      if (!cancelled) setPreview({ key: previewKey, view });
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cartKey, country]);
+  const shippingKind = shipping?.kind;
+  const totalVat = vatTotal + (shipping?.vat ?? 0);
+  const totalDue = grandTotal + (shipping?.net ?? 0) + (shipping?.vat ?? 0);
 
   function handleQuote() {
     setError(null);
@@ -126,7 +142,13 @@ export function CheckoutClient({
           <div className="flex justify-between">
             <dt className="text-muted-foreground">Shipping (excl. VAT)</dt>
             <dd>
-              {shipping.kind === "free" ? "Free" : shipping.kind === "fee" ? formatCurrency(shipping.net) : "By quote"}
+              {!shipping
+                ? "…"
+                : shipping.kind === "free"
+                  ? "Free"
+                  : shipping.kind === "fee"
+                    ? formatCurrency(shipping.net)
+                    : "Quotation required"}
             </dd>
           </div>
           <div className="flex justify-between">
@@ -138,18 +160,21 @@ export function CheckoutClient({
             <dd className="font-heading text-lg font-medium">{formatCurrency(totalDue)}</dd>
           </div>
         </dl>
-        {shipping.kind === "free" && (
-          <p className="mt-2 text-xs text-status-good">Free shipping in Italy on orders over {formatCurrency(shippingSettings.freeThreshold)}.</p>
+        {shipping && shipping.kind !== "quote" && (
+          <p className={`mt-2 text-xs ${shipping.kind === "free" ? "text-status-good" : "text-muted-foreground"}`}>
+            {shipping.kind === "free" ? "✓ " : ""}
+            {shipping.message}
+          </p>
         )}
-        {shipping.kind === "fee" && (
-          <p className="mt-2 text-xs text-muted-foreground">
-            Free shipping in Italy from {formatCurrency(shippingSettings.freeThreshold)}.
+        {shipping?.dutiesNotice && (
+          <p className="mt-1 text-xs text-muted-foreground">
+            Import duties and taxes at destination are not included and may be charged by customs.
           </p>
         )}
 
         {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
 
-        {shipping.kind === "quote" ? (
+        {shippingKind === "quote" ? (
           quoteSent ? (
             <p className="mt-4 rounded-md border border-status-good/40 bg-status-good/10 px-3 py-2 text-sm text-status-good">
               Request sent. We will email you the shipping cost and how to pay.
@@ -157,8 +182,8 @@ export function CheckoutClient({
           ) : (
             <div className="mt-4 text-sm">
               <p className="text-muted-foreground">
-                Shipping to {selectedAddress?.country} is quoted individually — you can&rsquo;t pay online for this
-                destination. Send us your order and we will reply with the shipping cost.
+                Shipping for this order to {selectedAddress?.country} is quoted individually — you can&rsquo;t pay
+                online for it yet. Send us your order and we will reply with the shipping cost.
               </p>
               <textarea
                 value={quoteMessage}
@@ -202,7 +227,7 @@ export function CheckoutClient({
         <button
           type="button"
           onClick={handleCheckout}
-          disabled={isPending || !addressId || !acceptedTerms}
+          disabled={isPending || !addressId || !acceptedTerms || !shipping}
           className="mt-4 w-full rounded-full bg-primary px-4 py-3 text-sm font-medium text-primary-foreground shadow-sm transition hover:shadow-md disabled:opacity-50"
         >
           {isPending ? "Redirecting to payment…" : "Place order — obligation to pay"}

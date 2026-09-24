@@ -17,7 +17,7 @@ export default function TermsPage() {
       <h2>1. Products and prices</h2>
       <p>
         Product descriptions, specifications and availability are those shown on each product page
-        when you order. Prices are in euro and shown including VAT at the applicable rate; the price excluding VAT is also shown for business customers, and the order summary breaks down net amount and VAT. Shipping in Italy is free for orders from the threshold shown on the site (goods total, VAT included); below it a flat fee applies, shown in the order summary before you pay. Shipping outside Italy is quoted individually on request and cannot be paid online.
+        when you order. Prices are in euro and shown including VAT at the applicable rate; the price excluding VAT is also shown for business customers, and the order summary breaks down net amount and VAT. Shipping costs depend on the destination and on the size and type of the products, and are shown in the order summary before you pay. Free shipping may be offered on eligible orders that reach the amount indicated on the site; it is confirmed in the order summary and is not guaranteed for every product or order. Some destinations and products are quoted individually on request and cannot be paid online. For destinations outside the EU, import duties and taxes are not included and may be charged by customs.
       </p>
 
       <h2>2. Placing an order and contract</h2>

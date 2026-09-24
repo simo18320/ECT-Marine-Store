@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getAddresses } from "@/lib/addresses/queries";
 import { CheckoutClient } from "@/components/checkout/checkout-client";
-import { getShippingSettings } from "@/lib/settings/queries";
 
 export default async function CheckoutPage() {
   const supabase = await createClient();
@@ -34,7 +33,7 @@ export default async function CheckoutPage() {
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-16">
       <h1 className="mb-6 text-3xl font-medium">Checkout</h1>
-      <CheckoutClient addresses={addresses} shippingSettings={await getShippingSettings()} />
+      <CheckoutClient addresses={addresses} />
     </main>
   );
 }

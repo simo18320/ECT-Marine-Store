@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { computeOrderTotals, generateOrderNumber, toStripeUnitAmount } from "@/lib/orders/rules";
-import { computeShipping, isItaly } from "@/lib/orders/shipping";
+import { isItaly } from "@/lib/orders/shipping";
 
 describe("computeOrderTotals", () => {
   it("sums subtotal and VAT per line at each line's own rate", () => {
@@ -48,23 +48,7 @@ describe("toStripeUnitAmount", () => {
 });
 
 
-describe("computeShipping", () => {
-  const settings = { freeThreshold: 100, feeItaly: 12.9 };
-
-  it("is free in Italy from the threshold (VAT-inclusive goods total)", () => {
-    expect(computeShipping({ goodsGross: 100, country: "Italia", settings }).kind).toBe("free");
-    expect(computeShipping({ goodsGross: 250, country: "Italy", settings }).kind).toBe("free");
-  });
-
-  it("charges the flat fee plus VAT below the threshold in Italy", () => {
-    expect(computeShipping({ goodsGross: 99.99, country: "IT", settings })).toEqual({ kind: "fee", net: 12.9, vat: 2.84 });
-  });
-
-  it("requires a quote for any other country, whatever the amount", () => {
-    expect(computeShipping({ goodsGross: 500, country: "France", settings }).kind).toBe("quote");
-    expect(computeShipping({ goodsGross: 500, country: "", settings }).kind).toBe("quote");
-  });
-
+describe("isItaly", () => {
   it("recognises the common spellings of Italy", () => {
     expect(["Italy", " italia ", "IT", "ITA"].every(isItaly)).toBe(true);
     expect(isItaly("Malta")).toBe(false);

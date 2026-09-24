@@ -24,3 +24,36 @@ export function countryOptions(): CountryOption[] {
     .map(({ name }) => ({ value: name, label: name }));
   return [{ value: "Italia", label: "Italia (Italy)" }, ...others];
 }
+
+const ALIASES: Record<string, string> = {
+  italy: "IT",
+  ita: "IT",
+  uk: "GB",
+  "great britain": "GB",
+  england: "GB",
+  scotland: "GB",
+  wales: "GB",
+  usa: "US",
+  "united states of america": "US",
+  holland: "NL",
+  "the netherlands": "NL",
+  czechia: "CZ",
+};
+
+let codeByName: Map<string, string> | null = null;
+
+// Resolves the stored country text (a dropdown value, or older free text) to an ISO code.
+export function countryCode(country: string | null | undefined): string | null {
+  if (!country) return null;
+  const key = country.trim().toLowerCase();
+  if (!key) return null;
+  if (!codeByName) {
+    const names = new Intl.DisplayNames(["en"], { type: "region" });
+    codeByName = new Map(CODES.split(" ").map((code) => [(names.of(code) ?? code).toLowerCase(), code]));
+    codeByName.set("italia", "IT");
+  }
+  if (ALIASES[key]) return ALIASES[key];
+  if (codeByName.has(key)) return codeByName.get(key)!;
+  if (/^[a-z]{2}$/.test(key) && CODES.split(" ").includes(key.toUpperCase())) return key.toUpperCase();
+  return null;
+}

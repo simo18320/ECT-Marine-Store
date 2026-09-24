@@ -1,11 +1,32 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useCart } from "@/lib/cart/cart-context";
 import { formatCurrency, withVat } from "@/lib/utils";
+import { previewShipping } from "@/lib/shipping/actions";
+import type { CustomerShippingView } from "@/lib/shipping/provider";
 
-export function CartClient({ shippingSettings }: { shippingSettings: { freeThreshold: number; feeItaly: number } }) {
+export function CartClient() {
   const { items, updateQuantity, removeItem, subtotal, vatTotal, grandTotal } = useCart();
+  // Indicative shipping for Italy; the real destination is chosen at checkout. The server decides
+  // (margin rules included) so the cart never promises free shipping the checkout would refuse.
+  const [shipping, setShipping] = useState<CustomerShippingView | null>(null);
+  const cartKey = items.map((i) => `${i.productId}:${i.quantity}`).join(",");
+  useEffect(() => {
+    let cancelled = false;
+    if (items.length === 0) return;
+    previewShipping(
+      items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+      "Italia",
+    ).then((view) => {
+      if (!cancelled) setShipping(view);
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cartKey]);
 
   return (
     <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-10">
@@ -67,9 +88,25 @@ export function CartClient({ shippingSettings }: { shippingSettings: { freeThres
                 <dd className="font-heading text-lg font-medium">{formatCurrency(grandTotal)}</dd>
               </div>
             </dl>
-            <p className="mt-3 text-xs text-muted-foreground">
-              Shipping is calculated at checkout: free in Italy from {formatCurrency(shippingSettings.freeThreshold)}
-              ; outside Italy by quote.
+            <p
+              className={`mt-3 rounded-md px-3 py-2 text-xs ${
+                shipping?.kind === "free" ? "bg-status-good/10 text-status-good" : "bg-secondary text-muted-foreground"
+              }`}
+            >
+              {shipping
+                ? shipping.kind === "free"
+                  ? "✓ FREE SHIPPING unlocked"
+                  : shipping.kind === "quote"
+                    ? "Shipping quotation required"
+                    : shipping.message
+                : "Shipping is calculated at checkout."}
+              {shipping?.kind === "fee" && shipping.amountToFree !== null && (
+                <span className="block text-[11px]">Standard shipping otherwise {formatCurrency(shipping.net)} + VAT.</span>
+              )}
+            </p>
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              Final shipping is confirmed at checkout for your delivery address. Outside Italy: EU and UK online,
+              other destinations by quote.
             </p>
             <Link
               href="/checkout"

@@ -33,6 +33,37 @@ function mergeStructuredSpecs(formData: FormData, base: Json): Json {
   return specs;
 }
 
+const optionalNumber = (formData: FormData, name: string): number | null => {
+  const raw = String(formData.get(name) ?? "").trim().replace(",", ".");
+  if (raw === "") return null;
+  const n = Number(raw);
+  return Number.isFinite(n) && n >= 0 ? n : null;
+};
+
+function readShippingFields(formData: FormData) {
+  const cls = String(formData.get("shipping_class") ?? "");
+  const dims = {
+    length_cm: optionalNumber(formData, "dim_length_cm"),
+    width_cm: optionalNumber(formData, "dim_width_cm"),
+    height_cm: optionalNumber(formData, "dim_height_cm"),
+  };
+  return {
+    shipping_class: ["A", "B", "C", "D"].includes(cls) ? cls : null,
+    packaging_cost: optionalNumber(formData, "packaging_cost"),
+    free_shipping_eligible: formData.get("free_shipping_eligible") === "on",
+    minimum_margin_percent: optionalNumber(formData, "minimum_margin_percent"),
+    minimum_margin_amount: optionalNumber(formData, "minimum_margin_amount"),
+    special_shipping_required: formData.get("special_shipping_required") === "on",
+    shipping_override: formData.get("shipping_override") === "on",
+    shipping_override_cost: optionalNumber(formData, "shipping_override_cost"),
+    shipping_cost_it: optionalNumber(formData, "shipping_cost_it"),
+    shipping_cost_eu: optionalNumber(formData, "shipping_cost_eu"),
+    shipping_cost_uk: optionalNumber(formData, "shipping_cost_uk"),
+    shipping_cost_int: optionalNumber(formData, "shipping_cost_int"),
+    dimensions: Object.values(dims).some((v) => v !== null) ? dims : null,
+  };
+}
+
 function readProductForm(formData: FormData) {
   const certifications = (formData.get("certifications") as string)
     .split(",")
@@ -70,7 +101,7 @@ function readProductForm(formData: FormData) {
     selling_price: Number(formData.get("selling_price")),
     vat_rate: Number(formData.get("vat_rate")) || 22,
     weight_kg: formData.get("weight_kg") ? Number(formData.get("weight_kg")) : null,
-    shipping_cost: formData.get("shipping_cost") ? Number(formData.get("shipping_cost")) : null,
+    ...readShippingFields(formData),
     delivery_estimate: deliveryEstimate as "ships_immediately" | "ships_2_3_days" | "made_to_order" | null,
     replacement_interval_days: formData.get("replacement_interval_days")
       ? Number(formData.get("replacement_interval_days"))

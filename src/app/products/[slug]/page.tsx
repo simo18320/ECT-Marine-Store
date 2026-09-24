@@ -9,7 +9,8 @@ import { VariantSelector } from "@/components/product/variant-selector";
 import { SamplingKitDetails } from "@/components/product/sampling-kit-details";
 import { getProductBySlug } from "@/lib/products/queries";
 import { getAvailabilityLabel } from "@/lib/inventory/rules";
-import { getShippingSettings, getStoreSettings } from "@/lib/settings/queries";
+import { getStoreSettings } from "@/lib/settings/queries";
+import { productShippingNote } from "@/lib/shipping/actions";
 import { formatCurrency, withVat } from "@/lib/utils";
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -23,7 +24,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const specs = Object.entries(rawSpecs);
 
   const settings = await getStoreSettings();
-  const shippingSettings = await getShippingSettings();
+  const shippingNote = await productShippingNote(product.id);
   const stockLabel = getAvailabilityLabel(
     stockStatus,
     product.delivery_estimate,
@@ -85,9 +86,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             <p className="mt-0.5 text-xs text-muted-foreground">
               {formatCurrency(product.selling_price)} excl. VAT (business customers)
             </p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Free shipping in Italy from {formatCurrency(shippingSettings.freeThreshold)} · outside Italy by quote
-            </p>
+            {shippingNote && <p className="mt-1 text-sm text-muted-foreground">{shippingNote}</p>}
             <span
               className={
                 product.delivery_estimate || (stockStatus === "out_of_stock" && settings.restock_mode)

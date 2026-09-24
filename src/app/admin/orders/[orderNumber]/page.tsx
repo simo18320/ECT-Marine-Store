@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireStaff } from "@/lib/admin/guard";
+import { createClient } from "@/lib/supabase/server";
+import { ProfitabilityPanel } from "@/components/admin/profitability-panel";
 import { getOrderAdmin } from "@/lib/admin/orders";
 import { overrideOrderStatus } from "@/lib/admin/order-actions";
 import { generateDeliveryNote } from "@/lib/orders/delivery-actions";
@@ -31,7 +33,7 @@ export default async function AdminOrderDetailPage({
 }: {
   params: Promise<{ orderNumber: string }>;
 }) {
-  await requireStaff();
+  const staff = await requireStaff();
   const { orderNumber } = await params;
   const order = await getOrderAdmin(orderNumber);
   if (!order) notFound();
@@ -41,6 +43,12 @@ export default async function AdminOrderDetailPage({
     estimateOrderWeightKg(order.id),
     getShipmentForOrder(order.id),
   ]);
+
+  // Cost and margin data is admin-only (RLS): operators simply get no row back.
+  const { data: profitability } =
+    staff.role === "ect_operator"
+      ? { data: null }
+      : await (await createClient()).from("order_profitability").select("*").eq("order_id", order.id).maybeSingle();
 
   const updateStatus = overrideOrderStatus.bind(null, order.id);
   const generateDdt = generateDeliveryNote.bind(null, order.id);
@@ -108,6 +116,8 @@ export default async function AdminOrderDetailPage({
           <dd>{formatCurrency(order.grand_total)}</dd>
         </div>
       </dl>
+
+      {profitability && <ProfitabilityPanel snapshot={profitability} orderId={order.id} />}
 
       {order.shipping_address && (
         <div className="mt-6">
