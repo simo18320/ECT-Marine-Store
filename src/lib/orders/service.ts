@@ -60,6 +60,17 @@ export async function priceCheckoutLines(lines: CheckoutLineInput[]): Promise<Pr
 /** Throws if any line requests more than is currently available (business-rules.md §2). */
 export async function assertStockAvailable(lines: CheckoutLineInput[]): Promise<void> {
   const admin = createAdminClient();
+  // Products supplied within a stated lead time (not stocked) are orderable at zero stock.
+  const { data: backorderable } = await admin
+    .from("products")
+    .select("id")
+    .in(
+      "id",
+      lines.map((l) => l.productId),
+    )
+    .eq("delivery_estimate", "available_3_working_days");
+  const skipStockCheck = new Set((backorderable ?? []).map((p) => p.id));
+
   const { data: inventory, error } = await admin
     .from("inventory")
     .select("product_id, current_stock, reserved_stock")
@@ -73,6 +84,7 @@ export async function assertStockAvailable(lines: CheckoutLineInput[]): Promise<
   const byProduct = new Map((inventory ?? []).map((i) => [i.product_id, i]));
 
   for (const line of lines) {
+    if (skipStockCheck.has(line.productId)) continue;
     const stock = byProduct.get(line.productId);
     const available = stock ? stock.current_stock - stock.reserved_stock : 0;
     if (available < line.quantity) {

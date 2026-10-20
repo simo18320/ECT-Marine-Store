@@ -4,13 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import { useCart } from "@/lib/cart/cart-context";
 import { formatCurrency, withVat } from "@/lib/utils";
+import { isBackorderable } from "@/lib/inventory/rules";
 import type { ProductListItem } from "@/lib/products/queries";
 
 /** Compact card for chat results (the storefront ProductCard is a server component). */
 export function ChatProductCard({ product }: { product: ProductListItem }) {
   const { addItem } = useCart();
   const [added, setAdded] = useState(false);
-  const outOfStock = product.availability_status === "out_of_stock";
+  const outOfStock = product.availability_status === "out_of_stock" && !isBackorderable(product.delivery_estimate);
   // Regulated products need the compliance acknowledgement on their own page before purchase.
   const canQuickAdd = !outOfStock && !product.requires_compliance_ack;
 

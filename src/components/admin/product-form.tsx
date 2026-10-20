@@ -41,6 +41,7 @@ const DELIVERY_ESTIMATE_OPTIONS: { value: string; label: string }[] = [
   { value: "", label: "— Not set (uses stock status) —" },
   { value: "ships_immediately", label: "Ships immediately" },
   { value: "ships_2_3_days", label: "Ships in 2–3 days" },
+  { value: "available_3_working_days", label: "Not stocked — orderable, available in 3 working days" },
   { value: "made_to_order", label: "Made to order (1–2 weeks)" },
 ];
 

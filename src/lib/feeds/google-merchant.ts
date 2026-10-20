@@ -1,4 +1,5 @@
 import { withVat } from "@/lib/utils";
+import { addWorkingDays, isBackorderable } from "@/lib/inventory/rules";
 
 /**
  * Google Merchant Center product feed (RSS 2.0 + g: namespace). Pure: takes catalogue rows and
@@ -19,6 +20,7 @@ export interface FeedProduct {
   images: { url: string; sort_order: number | null }[] | null;
   shipping_class: string | null;
   special_shipping_required: boolean;
+  delivery_estimate: string | null;
 }
 
 const DEFAULT_BRAND = "ECT Marine";
@@ -51,9 +53,17 @@ function truncateWords(text: string, max: number): string {
   return (lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut.slice(0, max - 1)).trimEnd();
 }
 
-/** Stock the shop can actually sell: anything without a positive status is out of stock. */
-export function feedAvailability(status: string | null): "in_stock" | "out_of_stock" {
-  return status === "in_stock" || status === "low_stock" ? "in_stock" : "out_of_stock";
+/**
+ * What a shopper can really order. Stock on hand is in_stock; a product supplied within three
+ * working days is a backorder (Merchant Center then needs the date it becomes available);
+ * anything else without stock is out_of_stock.
+ */
+export function feedAvailability(
+  status: string | null,
+  deliveryEstimate: string | null = null,
+): "in_stock" | "out_of_stock" | "backorder" {
+  if (status === "in_stock" || status === "low_stock") return "in_stock";
+  return isBackorderable(deliveryEstimate) ? "backorder" : "out_of_stock";
 }
 
 export interface FeedItemResult {
@@ -61,7 +71,7 @@ export interface FeedItemResult {
   skipped?: "no_image" | "no_price" | "quote_only";
 }
 
-export function buildItem(p: FeedProduct, baseUrl: string): FeedItemResult {
+export function buildItem(p: FeedProduct, baseUrl: string, now: Date = new Date()): FeedItemResult {
   const images = [...(p.images ?? [])].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)).map((i) => i.url);
   // Merchant Center rejects a product without an image, so it is left out rather than listed broken.
   if (images.length === 0) return { xml: null, skipped: "no_image" };
@@ -75,6 +85,7 @@ export function buildItem(p: FeedProduct, baseUrl: string): FeedItemResult {
   const title = truncateWords(clean(p.name), MAX_TITLE);
   const description = truncateWords(clean(p.description) || clean(p.short_description) || title, MAX_DESCRIPTION);
   // Prices for Italy are VAT-inclusive, as on the storefront.
+  const availability = feedAvailability(p.availability_status, p.delivery_estimate);
   const price = `${withVat(p.selling_price, p.vat_rate).toFixed(2)} EUR`;
 
   const lines = [
@@ -84,7 +95,10 @@ export function buildItem(p: FeedProduct, baseUrl: string): FeedItemResult {
     `<g:link>${escapeXml(`${baseUrl}/products/${p.slug}`)}</g:link>`,
     `<g:image_link>${escapeXml(images[0])}</g:image_link>`,
     ...images.slice(1, 1 + MAX_EXTRA_IMAGES).map((url) => `<g:additional_image_link>${escapeXml(url)}</g:additional_image_link>`),
-    `<g:availability>${feedAvailability(p.availability_status)}</g:availability>`,
+    `<g:availability>${availability}</g:availability>`,
+    ...(availability === "backorder"
+      ? [`<g:availability_date>${addWorkingDays(now, 3).toISOString().slice(0, 10)}T00:00Z</g:availability_date>`]
+      : []),
     `<g:price>${price}</g:price>`,
     `<g:condition>new</g:condition>`,
     `<g:brand>${escapeXml(p.brand?.name ?? DEFAULT_BRAND)}</g:brand>`,
@@ -97,11 +111,11 @@ export function buildItem(p: FeedProduct, baseUrl: string): FeedItemResult {
   return { xml: `<item>\n      ${lines.join("\n      ")}\n    </item>` };
 }
 
-export function buildFeed(products: FeedProduct[], baseUrl: string) {
+export function buildFeed(products: FeedProduct[], baseUrl: string, now: Date = new Date()) {
   const items: string[] = [];
   const skipped: { sku: string; reason: string }[] = [];
   for (const p of products) {
-    const r = buildItem(p, baseUrl);
+    const r = buildItem(p, baseUrl, now);
     if (r.xml) items.push(r.xml);
     else skipped.push({ sku: p.sku, reason: r.skipped ?? "unknown" });
   }

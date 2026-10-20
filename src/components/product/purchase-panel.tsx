@@ -15,6 +15,8 @@ interface PurchasePanelProps {
   stockStatus: StockStatus;
   stockLabel: string;
   requiresComplianceAck: boolean;
+  /** Out of stock but supplied within a stated lead time, so still orderable. */
+  backorderable?: boolean;
 }
 
 export function PurchasePanel({
@@ -27,6 +29,7 @@ export function PurchasePanel({
   stockStatus,
   stockLabel,
   requiresComplianceAck,
+  backorderable = false,
 }: PurchasePanelProps) {
   const { addItem } = useCart();
   const router = useRouter();
@@ -34,7 +37,7 @@ export function PurchasePanel({
   const [ackChecked, setAckChecked] = useState(false);
   const [justAdded, setJustAdded] = useState(false);
 
-  const outOfStock = stockStatus === "out_of_stock";
+  const outOfStock = stockStatus === "out_of_stock" && !backorderable;
   const canAdd = !outOfStock && (!requiresComplianceAck || ackChecked);
 
   function handleAddToCart() {

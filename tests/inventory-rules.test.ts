@@ -42,3 +42,25 @@ describe("STOCK_STATUS_LABEL", () => {
     expect(Object.keys(STOCK_STATUS_LABEL).sort()).toEqual(["in_stock", "low_stock", "out_of_stock"]);
   });
 });
+
+describe("backorderable availability", () => {
+  it("only the 3-working-day estimate makes an out-of-stock product orderable", async () => {
+    const { isBackorderable } = await import("@/lib/inventory/rules");
+    expect(isBackorderable("available_3_working_days")).toBe(true);
+    for (const other of ["ships_immediately", "ships_2_3_days", "made_to_order", null, undefined]) {
+      expect(isBackorderable(other)).toBe(false);
+    }
+  });
+
+  it("skips weekends when counting working days", async () => {
+    const { addWorkingDays } = await import("@/lib/inventory/rules");
+    expect(addWorkingDays(new Date("2026-10-21T10:00:00Z"), 3).toISOString().slice(0, 10)).toBe("2026-10-26");
+    expect(addWorkingDays(new Date("2026-10-23T10:00:00Z"), 3).toISOString().slice(0, 10)).toBe("2026-10-28");
+  });
+
+  it("labels the product by its real state", async () => {
+    const { getAvailabilityLabel } = await import("@/lib/inventory/rules");
+    expect(getAvailabilityLabel("out_of_stock", "available_3_working_days", true, "Restocking")).toBe("Available in 3 working days");
+    expect(getAvailabilityLabel("in_stock", "available_3_working_days", false, "")).toBe("In stock");
+  });
+});

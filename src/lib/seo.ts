@@ -35,6 +35,7 @@ const AVAILABILITY = {
   in_stock: "https://schema.org/InStock",
   low_stock: "https://schema.org/LimitedAvailability",
   out_of_stock: "https://schema.org/OutOfStock",
+  backorder: "https://schema.org/BackOrder",
 } as const;
 
 export function productJsonLd(p: {

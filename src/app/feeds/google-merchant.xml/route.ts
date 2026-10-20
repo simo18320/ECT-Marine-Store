@@ -13,7 +13,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from("products")
     .select(
-      "sku, slug, name, description, short_description, selling_price, vat_rate, availability_status, brand:brands(name), category:categories(name), images:product_images(url, sort_order), shipping_class, special_shipping_required",
+      "sku, slug, name, description, short_description, selling_price, vat_rate, availability_status, brand:brands(name), category:categories(name), images:product_images(url, sort_order), shipping_class, special_shipping_required, delivery_estimate",
     )
     .eq("is_active", true)
     .order("sku")

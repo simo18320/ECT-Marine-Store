@@ -3060,6 +3060,7 @@ export type Database = {
         | "ships_immediately"
         | "ships_2_3_days"
         | "made_to_order"
+        | "available_3_working_days"
       replacement_status: "ok" | "due_soon" | "due" | "overdue" | "unknown"
       rfq_status: "draft" | "sent" | "quoted" | "awarded" | "cancelled"
       service_request_status:
@@ -3254,6 +3255,7 @@ export const Constants = {
         "ships_immediately",
         "ships_2_3_days",
         "made_to_order",
+        "available_3_working_days",
       ],
       replacement_status: ["ok", "due_soon", "due", "overdue", "unknown"],
       rfq_status: ["draft", "sent", "quoted", "awarded", "cancelled"],

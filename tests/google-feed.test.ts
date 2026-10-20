@@ -16,6 +16,7 @@ const product = (over: Partial<FeedProduct> = {}): FeedProduct => ({
   images: [{ url: "https://img/2.jpg", sort_order: 2 }, { url: "https://img/1.jpg", sort_order: 1 }],
   shipping_class: "A",
   special_shipping_required: false,
+  delivery_estimate: null,
   ...over,
 });
 
@@ -64,6 +65,18 @@ describe("Google Merchant feed", () => {
     expect(feedAvailability("low_stock")).toBe("in_stock");
     expect(feedAvailability("out_of_stock")).toBe("out_of_stock");
     expect(feedAvailability(null)).toBe("out_of_stock");
+  });
+
+  it("lists not-stocked products with a 3-working-day lead time as backorder with a date", () => {
+    // Wednesday 2026-10-21 + 3 working days = Monday 2026-10-26 (weekend skipped)
+    const now = new Date("2026-10-21T10:00:00Z");
+    const xml = buildItem(product({ availability_status: null, delivery_estimate: "available_3_working_days" }), base, now).xml!;
+    expect(xml).toContain("<g:availability>backorder</g:availability>");
+    expect(xml).toContain("<g:availability_date>2026-10-26T00:00Z</g:availability_date>");
+    // other estimates are only labels: still out of stock
+    expect(feedAvailability(null, "ships_2_3_days")).toBe("out_of_stock");
+    // in stock wins over the lead-time flag
+    expect(feedAvailability("in_stock", "available_3_working_days")).toBe("in_stock");
   });
 
   it("builds a feed with counts and the skipped list", () => {

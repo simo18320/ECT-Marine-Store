@@ -10,7 +10,7 @@ import { AvailabilityRequestForm } from "@/components/product/availability-reque
 import { VariantSelector } from "@/components/product/variant-selector";
 import { SamplingKitDetails } from "@/components/product/sampling-kit-details";
 import { getProductBySlug } from "@/lib/products/queries";
-import { getAvailabilityLabel } from "@/lib/inventory/rules";
+import { getAvailabilityLabel, isBackorderable } from "@/lib/inventory/rules";
 import { getStoreSettings } from "@/lib/settings/queries";
 import { productShippingNote } from "@/lib/shipping/actions";
 import { formatCurrency, withVat } from "@/lib/utils";
@@ -40,6 +40,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   if (!product) notFound();
 
   const stockStatus = product.availability_status;
+  const backorderable = isBackorderable(product.delivery_estimate);
   const rawSpecs = (product.technical_specs as Record<string, unknown>) ?? {};
   const isSamplingKit = Array.isArray(rawSpecs.contents) && rawSpecs.contents.length > 0;
   const specs = Object.entries(rawSpecs);
@@ -67,7 +68,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               description: truncate(product.short_description ?? product.description, 300),
               image: product.images[0]?.url,
               priceInclVat: withVat(product.selling_price, product.vat_rate),
-              availability: stockStatus,
+              availability: backorderable && stockStatus === "out_of_stock" ? "backorder" : stockStatus,
             }),
           ),
         }}
@@ -151,10 +152,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 stockStatus={stockStatus}
                 stockLabel={stockLabel}
                 requiresComplianceAck={product.requires_compliance_ack}
+                backorderable={backorderable}
               />
             </div>
 
-            {stockStatus === "out_of_stock" && (
+            {stockStatus === "out_of_stock" && !backorderable && (
               <div className="mt-4">
                 <AvailabilityRequestForm productId={product.id} />
               </div>
