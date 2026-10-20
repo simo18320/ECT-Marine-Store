@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getYachtWithRegister } from "@/lib/yachts/queries";
 import { searchProducts, type ProductListItem } from "@/lib/products/queries";
+import { rankProducts, toOrQuery, type SearchCriteria } from "./ranking";
 import { getRecommendationsForProblem, type RecommendationResult } from "@/lib/recommendations/engine";
 import {
   computeEquipmentReplacementStatus,
@@ -106,7 +107,13 @@ export async function getReplacementStatus(yachtId: string): Promise<Retrieved<Y
   return getYachtContext(yachtId);
 }
 
-export async function getProductContext(query: string): Promise<Retrieved<ProductListItem[]>> {
+export async function getProductContext(query: string, criteria?: SearchCriteria): Promise<Retrieved<ProductListItem[]>> {
+  // Natural sentences rarely match as one AND query, so the extracted keywords are searched as an
+  // OR and the hits are ranked against size/micron; the raw-message search stays as the fallback.
+  if (criteria && criteria.keywords.length > 0) {
+    const ranked = rankProducts(await searchProducts(toOrQuery(criteria)), criteria, 8);
+    if (ranked.length > 0) return wrap(ranked);
+  }
   const results = await searchProducts(query);
   return wrap(results.slice(0, 8));
 }

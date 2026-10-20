@@ -1,14 +1,16 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import Link from "next/link";
 import { sendAssistantMessage } from "@/lib/ai/service";
+import { ChatProductCard } from "./chat-product-card";
+import type { ProductListItem } from "@/lib/products/queries";
 
 interface DisplayMessage {
   role: "user" | "assistant";
   content: string;
   known?: { fact: string; source: string }[];
   needsVerification?: string[];
+  products?: ProductListItem[];
 }
 
 export function AssistantChat({ yachts }: { yachts: { id: string; name: string }[] }) {
@@ -34,7 +36,7 @@ export function AssistantChat({ yachts }: { yachts: { id: string; name: string }
         setConversationId(result.conversationId);
         setMessages((prev) => [
           ...prev,
-          { role: "assistant", content: result.reply, known: result.known, needsVerification: result.needsVerification },
+          { role: "assistant", content: result.reply, known: result.known, needsVerification: result.needsVerification, products: result.products },
         ]);
       } catch {
         setError("Something went wrong sending that message. Try again.");
@@ -71,7 +73,7 @@ export function AssistantChat({ yachts }: { yachts: { id: string; name: string }
           </p>
         ) : (
           messages.map((m, i) => (
-            <div key={i} className={m.role === "user" ? "self-end text-right" : "self-start"}>
+            <div key={i} className={m.role === "user" ? "self-end text-right" : "w-full self-start"}>
               <div
                 className={
                   m.role === "user"
@@ -81,6 +83,13 @@ export function AssistantChat({ yachts }: { yachts: { id: string; name: string }
               >
                 <p className="whitespace-pre-wrap">{m.content}</p>
               </div>
+              {m.role === "assistant" && m.products && m.products.length > 0 && (
+                <div className="mt-3 grid w-full grid-cols-2 gap-3 text-left sm:grid-cols-3">
+                  {m.products.map((p) => (
+                    <ChatProductCard key={p.id} product={p} />
+                  ))}
+                </div>
+              )}
               {m.role === "assistant" && m.needsVerification && m.needsVerification.length > 0 && (
                 <p className="mt-1 text-xs text-muted-foreground">
                   Not confirmed: {m.needsVerification.join("; ")}
@@ -98,7 +107,7 @@ export function AssistantChat({ yachts }: { yachts: { id: string; name: string }
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask the AI assistant — e.g. My water tastes odd, what should I check?"
+          placeholder="Describe what you need — e.g. 10 inch 5 micron sediment filter, or: my water tastes odd"
           className="flex-1 rounded-md border border-input bg-card px-3 py-2 text-sm"
         />
         <button
@@ -110,13 +119,6 @@ export function AssistantChat({ yachts }: { yachts: { id: string; name: string }
         </button>
       </form>
 
-      <p className="text-xs text-muted-foreground">
-        Looking for a specific product?{" "}
-        <Link href="/find-product" className="text-primary hover:underline">
-          Use the product finder
-        </Link>{" "}
-        for a full ranked comparison instead.
-      </p>
     </div>
   );
 }

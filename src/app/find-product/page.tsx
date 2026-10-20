@@ -6,6 +6,7 @@ import { PROBLEMS, getProblem } from "@/lib/recommendations/problems";
 import { getRecommendationsForProblem, getSuggestedProductTypes } from "@/lib/recommendations/engine";
 import { createClient } from "@/lib/supabase/server";
 import { getYachtsForUser } from "@/lib/yachts/queries";
+import { AssistantChat } from "@/components/assistant/chat";
 
 export default async function FindProductPage({
   searchParams,
@@ -21,12 +22,10 @@ export default async function FindProductPage({
       <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-10">
         <h1 className="text-3xl font-medium">Find the right product</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Tell us what you&rsquo;re trying to solve and we&rsquo;ll recommend compatible products
-          — never a guess, only products with verified compatibility.{" "}
-          <Link href="/assistant" className="font-medium text-primary hover:underline">
-            Prefer to describe it in your own words? Ask ECT (AI assistant) →
-          </Link>
+          Describe the part or the problem in your own words, or pick a problem below. We only show
+          products from our catalogue, and compatibility only where it has been verified.
         </p>
+        {!problem && <FinderChat />}
 
         {!problem ? (
           <ProblemSelector />
@@ -41,7 +40,7 @@ export default async function FindProductPage({
 
 function ProblemSelector() {
   return (
-    <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
       {PROBLEMS.map((problem) => (
         <Link
           key={problem.id}
@@ -156,6 +155,47 @@ async function ProblemResults({ problemId, yachtId }: { problemId: string; yacht
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+async function FinderChat() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return (
+      <div className="mt-6 rounded-lg border border-border bg-card p-5 text-sm">
+        <p className="font-medium">Ask in your own words</p>
+        <p className="mt-1 text-muted-foreground">
+          Sign in to describe what you need (&ldquo;10 inch 5 micron sediment filter&rdquo;) and get matching products straight away.
+        </p>
+        <Link
+          href="/login?next=/find-product"
+          className="mt-3 inline-block rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+        >
+          Sign in to ask
+        </Link>
+      </div>
+    );
+  }
+
+  const yachts = await getYachtsForUser();
+  return (
+    <div className="mt-6">
+      <p className="mb-3 rounded-md border border-border bg-card px-3 py-2 text-xs text-muted-foreground">
+        You are chatting with an artificial-intelligence assistant, not a person. Answers may contain errors —
+        confirm anything critical with ECT before ordering. Your messages are processed by an external AI
+        provider — see our{" "}
+        <Link href="/privacy" className="font-medium text-primary hover:underline">
+          Privacy Policy
+        </Link>
+        .
+      </p>
+      <AssistantChat yachts={yachts.map((y) => ({ id: y.id, name: y.name }))} />
+      <h2 className="mb-1 mt-10 text-sm font-semibold">Or start from a problem</h2>
     </div>
   );
 }

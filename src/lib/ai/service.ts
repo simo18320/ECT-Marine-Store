@@ -10,6 +10,8 @@ import {
   getYachtContext,
   type Retrieved,
 } from "./retrieval";
+import { extractCriteria } from "./intent";
+import { toListItem, PRODUCT_LIST_SELECT, type ProductListItem, type RawProductListRow } from "@/lib/products/queries";
 import { getAssistantReply, ASSISTANT_MODEL, type ConversationTurn } from "./client";
 import { checkAllowlist, FALLBACK_MESSAGE, type AssistantResponsePayload } from "./postprocess";
 import type { Json } from "@/types/database";
@@ -19,6 +21,8 @@ export interface AssistantTurnResult {
   reply: string;
   known: AssistantResponsePayload["known"];
   needsVerification: string[];
+  /** Catalogue products the reply recommends, already checked against this turn's retrieved SKUs. */
+  products: ProductListItem[];
 }
 
 async function getOrCreateConversation(profileId: string, conversationId: string | null, yachtId: string | null) {
@@ -50,7 +54,7 @@ export async function sendAssistantMessage(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login?next=/assistant");
+  if (!user) redirect("/login?next=/find-product");
 
   const conversation = await getOrCreateConversation(user.id, conversationId, yachtId);
 
@@ -67,10 +71,11 @@ export async function sendAssistantMessage(
   // Deterministic engines first (ai-engine.md's pipeline diagram) — Claude only ever explains
   // what these already resolved, it never picks a product or an equipment record on its own.
   const problem = detectProblem(trimmed);
+  const criteria = await extractCriteria(trimmed);
   const [customerContext, yachtContext, productContext, recommendations] = await Promise.all([
     getCustomerContext(user.id),
     yachtId ? getYachtContext(yachtId) : Promise.resolve(null),
-    getProductContext(trimmed),
+    getProductContext(trimmed, criteria),
     problem ? getRecommendations(problem.id, yachtId ?? undefined) : Promise.resolve(null),
   ]);
 
@@ -127,11 +132,22 @@ export async function sendAssistantMessage(
     });
   }
 
+  // Cards are only ever the recommended SKUs that survived the allowlist above, loaded fresh
+  // from the catalogue — the model's own wording never reaches the grid.
+  const recommendedSkus = (payload.recommendation?.products ?? []).map((p) => p.sku);
+  let products: ProductListItem[] = [];
+  if (recommendedSkus.length > 0) {
+    const { data } = await supabase.from("products").select(PRODUCT_LIST_SELECT).eq("is_active", true).in("sku", recommendedSkus);
+    const bySku = new Map(((data ?? []) as unknown as RawProductListRow[]).map(toListItem).map((p) => [p.sku, p]));
+    products = recommendedSkus.map((sku) => bySku.get(sku)).filter((p): p is ProductListItem => Boolean(p));
+  }
+
   return {
     conversationId: conversation,
     reply: payload.reply,
     known: payload.known,
     needsVerification: payload.needsVerification,
+    products,
   };
 }
 

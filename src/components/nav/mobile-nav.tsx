@@ -11,7 +11,7 @@ interface NavLink {
 // Caught in Phase 9's mobile pass: both the customer header (site-header.tsx) and the admin
 // header (app/admin/layout.tsx) render their full nav unconditionally with no responsive
 // handling — on the customer side it was `hidden md:flex` with no mobile equivalent at all
-// (/find-product, /assistant, /my-yacht unreachable from the header on a phone); on the admin
+// (/find-product, /my-yacht unreachable from the header on a phone); on the admin
 // side (8 links + a role badge + sign-out, always `flex`) it silently overflowed the whole page
 // body horizontally instead of wrapping. This is the shared mobile equivalent for both: a plain
 // toggled panel, no animation library needed.
