@@ -104,17 +104,19 @@ export async function createProductVariants(
       technical_specs: technicalSpecs,
       variant_group_id: variantGroupId,
       unit,
-      purchase_cost: row.purchaseCost,
       selling_price: row.sellingPrice,
       vat_rate: vatRate,
       weight_kg: row.weightKg,
-      shipping_cost: null,
       delivery_estimate: null,
       replacement_interval_days: null,
       certifications: [],
       requires_compliance_ack: false,
       is_active: true,
     }).select("id").single();
+
+    if (inserted && row.purchaseCost !== null) {
+      await supabase.from("product_private").upsert({ product_id: inserted.id, purchase_cost: row.purchaseCost });
+    }
 
     if (error || !inserted) {
       return {

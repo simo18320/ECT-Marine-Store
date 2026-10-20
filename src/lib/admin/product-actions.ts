@@ -49,18 +49,26 @@ function readShippingFields(formData: FormData) {
   };
   return {
     shipping_class: ["A", "B", "C", "D"].includes(cls) ? cls : null,
-    packaging_cost: optionalNumber(formData, "packaging_cost"),
     free_shipping_eligible: formData.get("free_shipping_eligible") === "on",
-    minimum_margin_percent: optionalNumber(formData, "minimum_margin_percent"),
-    minimum_margin_amount: optionalNumber(formData, "minimum_margin_amount"),
     special_shipping_required: formData.get("special_shipping_required") === "on",
     shipping_override: formData.get("shipping_override") === "on",
     shipping_override_cost: optionalNumber(formData, "shipping_override_cost"),
+    dimensions: Object.values(dims).some((v) => v !== null) ? dims : null,
+  };
+}
+
+// Cost and margin data never goes in `products` (customer-readable): it is saved to the
+// staff-only product_private table instead.
+function readPrivateFields(formData: FormData) {
+  return {
+    purchase_cost: optionalNumber(formData, "purchase_cost"),
+    packaging_cost: optionalNumber(formData, "packaging_cost"),
+    minimum_margin_percent: optionalNumber(formData, "minimum_margin_percent"),
+    minimum_margin_amount: optionalNumber(formData, "minimum_margin_amount"),
     shipping_cost_it: optionalNumber(formData, "shipping_cost_it"),
     shipping_cost_eu: optionalNumber(formData, "shipping_cost_eu"),
     shipping_cost_uk: optionalNumber(formData, "shipping_cost_uk"),
     shipping_cost_int: optionalNumber(formData, "shipping_cost_int"),
-    dimensions: Object.values(dims).some((v) => v !== null) ? dims : null,
   };
 }
 
@@ -97,7 +105,6 @@ function readProductForm(formData: FormData) {
     short_description: (formData.get("short_description") as string) || null,
     technical_specs: technicalSpecs,
     unit: (formData.get("unit") as string) || "pcs",
-    purchase_cost: formData.get("purchase_cost") ? Number(formData.get("purchase_cost")) : null,
     selling_price: Number(formData.get("selling_price")),
     vat_rate: Number(formData.get("vat_rate")) || 22,
     weight_kg: formData.get("weight_kg") ? Number(formData.get("weight_kg")) : null,
@@ -161,6 +168,10 @@ export async function createProduct(_prevState: ProductFormState, formData: Form
   if (error || !data) {
     return { error: friendlyProductError(error) };
   }
+  const { error: costError } = await supabase
+    .from("product_private")
+    .upsert({ product_id: data.id, ...readPrivateFields(formData), updated_at: new Date().toISOString() });
+  if (costError) return { error: `Product created, but its cost data could not be saved: ${costError.message}` };
 
   revalidatePath("/admin/products");
   redirect(`/admin/products/${data.id}/edit`);
@@ -179,6 +190,10 @@ export async function updateProduct(
   if (error) {
     return { error: friendlyProductError(error) };
   }
+  const { error: costError } = await supabase
+    .from("product_private")
+    .upsert({ product_id: id, ...readPrivateFields(formData), updated_at: new Date().toISOString() });
+  if (costError) return { error: `Saved, but cost data could not be saved: ${costError.message}` };
 
   revalidatePath("/admin/products");
   revalidatePath(`/admin/products/${id}/edit`);

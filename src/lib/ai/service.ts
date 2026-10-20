@@ -152,5 +152,35 @@ export async function sendAssistantMessage(
 }
 
 function describe<T>(retrieved: Retrieved<T>) {
-  return { data: retrieved.data, source: retrieved.source, asOf: retrieved.asOf };
+  return { data: compact(retrieved.data), source: retrieved.source, asOf: retrieved.asOf };
+}
+
+// Only what a customer-facing answer can use. Whole database rows carried search vectors, internal
+// flags and ids: wasted tokens, and nothing the model should ever be able to repeat.
+const PRODUCT_FIELDS = [
+  "sku",
+  "name",
+  "short_description",
+  "selling_price",
+  "vat_rate",
+  "unit",
+  "technical_specs",
+  "availability_status",
+  "delivery_estimate",
+  "certifications",
+  "requires_compliance_ack",
+] as const;
+
+function compactProduct(p: Record<string, unknown>) {
+  return Object.fromEntries(PRODUCT_FIELDS.filter((k) => p[k] !== undefined && p[k] !== null).map((k) => [k, p[k]]));
+}
+
+function compact(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(compact);
+  if (value && typeof value === "object") {
+    const obj = value as Record<string, unknown>;
+    if (typeof obj.sku === "string" && "selling_price" in obj) return compactProduct(obj);
+    return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, compact(v)]));
+  }
+  return value;
 }

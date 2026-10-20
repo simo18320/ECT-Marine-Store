@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { Database } from "@/types/database";
+import type { ProductForEdit } from "@/lib/admin/products";
 import { calculateShipping, type EngineProduct, type EngineSettings, type RateTable, type ShippingClass } from "@/lib/shipping/engine";
 import { formatCurrency } from "@/lib/utils";
 
-type Product = Database["public"]["Tables"]["products"]["Row"];
+type Product = ProductForEdit;
 
 export interface ShippingContext {
   settings: EngineSettings;

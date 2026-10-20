@@ -188,7 +188,7 @@ export async function loadAnalytics(from: Date, to: Date): Promise<{ orders: Ana
   const { data: itemRows } = ids.length
     ? await supabase
         .from("order_items")
-        .select("order_id, product_id, sku_snapshot, name_snapshot, quantity, line_total, unit_cost_snapshot")
+        .select("order_id, product_id, sku_snapshot, name_snapshot, quantity, line_total, cost:order_item_costs(unit_cost)")
         .in("order_id", ids)
     : { data: [] };
   const items: AnalyticsItem[] = (itemRows ?? []).map((i) => ({
@@ -198,7 +198,7 @@ export async function loadAnalytics(from: Date, to: Date): Promise<{ orders: Ana
     name: i.name_snapshot,
     quantity: i.quantity,
     lineTotal: Number(i.line_total),
-    unitCost: i.unit_cost_snapshot === null ? null : Number(i.unit_cost_snapshot),
+    unitCost: (() => { const c = Array.isArray(i.cost) ? i.cost[0] : i.cost; return c?.unit_cost == null ? null : Number(c.unit_cost); })(),
   }));
   return { orders, items };
 }

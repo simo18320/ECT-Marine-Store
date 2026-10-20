@@ -18,16 +18,34 @@ export async function listProductsAdmin(): Promise<ProductListRow[]> {
   return (data ?? []) as unknown as ProductListRow[];
 }
 
+type ProductPrivate = Database["public"]["Tables"]["product_private"]["Row"];
+/** The product as the edit form sees it: public row plus the staff-only cost/margin fields. */
+export type ProductForEdit = Product & Omit<ProductPrivate, "product_id" | "updated_at">;
+
 export async function getProductForEdit(id: string) {
   const supabase = await createClient();
-  const [{ data: product }, { data: images }, { data: documents }] = await Promise.all([
+  const [{ data: product }, { data: images }, { data: documents }, { data: costs }] = await Promise.all([
     supabase.from("products").select("*").eq("id", id).maybeSingle(),
     supabase.from("product_images").select("*").eq("product_id", id).order("sort_order"),
     supabase.from("product_documents").select("*").eq("product_id", id),
+    supabase.from("product_private").select("*").eq("product_id", id).maybeSingle(),
   ]);
 
   if (!product) return null;
-  return { product, images: images ?? [], documents: documents ?? [] };
+  // Cost and margin fields live in a staff-only table; the edit form sees them merged back in.
+  const privateFields = {
+    purchase_cost: costs?.purchase_cost ?? null,
+    shipping_cost: costs?.shipping_cost ?? null,
+    packaging_cost: costs?.packaging_cost ?? null,
+    minimum_margin_percent: costs?.minimum_margin_percent ?? null,
+    minimum_margin_amount: costs?.minimum_margin_amount ?? null,
+    shipping_cost_it: costs?.shipping_cost_it ?? null,
+    shipping_cost_eu: costs?.shipping_cost_eu ?? null,
+    shipping_cost_uk: costs?.shipping_cost_uk ?? null,
+    shipping_cost_int: costs?.shipping_cost_int ?? null,
+  };
+  const merged: ProductForEdit = { ...product, ...privateFields };
+  return { product: merged, images: images ?? [], documents: documents ?? [] };
 }
 
 export async function listCategoriesFlat() {

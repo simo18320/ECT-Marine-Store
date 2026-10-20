@@ -130,7 +130,7 @@ export async function createPendingOrder({
 
   if (orderError || !order) throw new CheckoutError("Could not create the order.");
 
-  const { error: itemsError } = await admin.from("order_items").insert(
+  const { data: insertedItems, error: itemsError } = await admin.from("order_items").insert(
     lines.map((line) => ({
       order_id: order.id,
       product_id: line.productId,
@@ -140,11 +140,19 @@ export async function createPendingOrder({
       quantity: line.quantity,
       vat_rate: line.vatRate,
       line_total: line.lineTotal,
-      unit_cost_snapshot: unitCosts.get(line.productId) ?? null,
     })),
-  );
+  ).select("id, product_id");
 
-  if (itemsError) throw new CheckoutError("Could not save order items.");
+  if (itemsError || !insertedItems) throw new CheckoutError("Could not save order items.");
+
+  // Purchase cost per line, kept in a staff-only table (never on the customer-readable item row).
+  const costRows = insertedItems
+    .map((item) => ({ order_item_id: item.id, unit_cost: unitCosts.get(item.product_id) ?? null }))
+    .filter((row) => row.unit_cost !== null);
+  if (costRows.length > 0) {
+    const { error: costError } = await admin.from("order_item_costs").insert(costRows);
+    if (costError) console.error("Could not save order item costs:", costError);
+  }
 
   const snapshot = buildProfitabilityRow(order.id, shipping);
   if (snapshot) {

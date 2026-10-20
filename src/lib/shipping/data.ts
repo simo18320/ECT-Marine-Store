@@ -61,46 +61,51 @@ export async function loadRateTable(): Promise<RateTable> {
 }
 
 const PRODUCT_COLUMNS =
-  "id, shipping_class, purchase_cost, weight_kg, packaging_cost, free_shipping_eligible, minimum_margin_percent, minimum_margin_amount, special_shipping_required, shipping_override, shipping_override_cost, shipping_cost_it, shipping_cost_eu, shipping_cost_uk, shipping_cost_int";
+  "id, shipping_class, weight_kg, free_shipping_eligible, special_shipping_required, shipping_override, shipping_override_cost, product_private(purchase_cost, packaging_cost, minimum_margin_percent, minimum_margin_amount, shipping_cost_it, shipping_cost_eu, shipping_cost_uk, shipping_cost_int)";
 
-type ProductRow = {
-  id: string;
-  shipping_class: string | null;
+type PrivateRow = {
   purchase_cost: number | null;
-  weight_kg: number | null;
   packaging_cost: number | null;
-  free_shipping_eligible: boolean;
   minimum_margin_percent: number | null;
   minimum_margin_amount: number | null;
-  special_shipping_required: boolean;
-  shipping_override: boolean;
-  shipping_override_cost: number | null;
   shipping_cost_it: number | null;
   shipping_cost_eu: number | null;
   shipping_cost_uk: number | null;
   shipping_cost_int: number | null;
 };
 
+type ProductRow = {
+  id: string;
+  shipping_class: string | null;
+  weight_kg: number | null;
+  free_shipping_eligible: boolean;
+  special_shipping_required: boolean;
+  shipping_override: boolean;
+  shipping_override_cost: number | null;
+  product_private: PrivateRow | PrivateRow[] | null;
+};
+
 const num = (v: number | null) => (v === null || v === undefined ? null : Number(v));
 
 export function toEngineProduct(row: ProductRow): EngineProduct {
+  const cost = (Array.isArray(row.product_private) ? row.product_private[0] : row.product_private) ?? null;
   return {
     id: row.id,
     shippingClass: CLASSES.includes(row.shipping_class as ShippingClass) ? (row.shipping_class as ShippingClass) : null,
-    purchaseCost: num(row.purchase_cost),
+    purchaseCost: num(cost?.purchase_cost ?? null),
     weightKg: num(row.weight_kg),
-    packagingCost: num(row.packaging_cost),
+    packagingCost: num(cost?.packaging_cost ?? null),
     freeShippingEligible: row.free_shipping_eligible,
-    minimumMarginPercent: num(row.minimum_margin_percent),
-    minimumMarginAmount: num(row.minimum_margin_amount),
+    minimumMarginPercent: num(cost?.minimum_margin_percent ?? null),
+    minimumMarginAmount: num(cost?.minimum_margin_amount ?? null),
     specialShippingRequired: row.special_shipping_required,
     shippingOverride: row.shipping_override,
     shippingOverrideCost: num(row.shipping_override_cost),
     shippingCostByZone: {
-      IT: num(row.shipping_cost_it),
-      EU: num(row.shipping_cost_eu),
-      UK: num(row.shipping_cost_uk),
-      INT: num(row.shipping_cost_int),
+      IT: num(cost?.shipping_cost_it ?? null),
+      EU: num(cost?.shipping_cost_eu ?? null),
+      UK: num(cost?.shipping_cost_uk ?? null),
+      INT: num(cost?.shipping_cost_int ?? null),
     },
   };
 }

@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -999,6 +999,29 @@ export type Database = {
           },
         ]
       }
+      order_item_costs: {
+        Row: {
+          order_item_id: string
+          unit_cost: number | null
+        }
+        Insert: {
+          order_item_id: string
+          unit_cost?: number | null
+        }
+        Update: {
+          order_item_id?: string
+          unit_cost?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_item_costs_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: true
+            referencedRelation: "order_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           id: string
@@ -1564,6 +1587,56 @@ export type Database = {
             foreignKeyName: "product_images_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_private: {
+        Row: {
+          minimum_margin_amount: number | null
+          minimum_margin_percent: number | null
+          packaging_cost: number | null
+          product_id: string
+          purchase_cost: number | null
+          shipping_cost: number | null
+          shipping_cost_eu: number | null
+          shipping_cost_int: number | null
+          shipping_cost_it: number | null
+          shipping_cost_uk: number | null
+          updated_at: string
+        }
+        Insert: {
+          minimum_margin_amount?: number | null
+          minimum_margin_percent?: number | null
+          packaging_cost?: number | null
+          product_id: string
+          purchase_cost?: number | null
+          shipping_cost?: number | null
+          shipping_cost_eu?: number | null
+          shipping_cost_int?: number | null
+          shipping_cost_it?: number | null
+          shipping_cost_uk?: number | null
+          updated_at?: string
+        }
+        Update: {
+          minimum_margin_amount?: number | null
+          minimum_margin_percent?: number | null
+          packaging_cost?: number | null
+          product_id?: string
+          purchase_cost?: number | null
+          shipping_cost?: number | null
+          shipping_cost_eu?: number | null
+          shipping_cost_int?: number | null
+          shipping_cost_it?: number | null
+          shipping_cost_uk?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_private_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
@@ -2273,27 +2346,21 @@ export type Database = {
       }
       store_settings: {
         Row: {
-          free_shipping_threshold: number
           id: boolean
           restock_label: string
           restock_mode: boolean
-          shipping_fee_italy: number
           updated_at: string
         }
         Insert: {
-          free_shipping_threshold?: number
           id?: boolean
           restock_label?: string
           restock_mode?: boolean
-          shipping_fee_italy?: number
           updated_at?: string
         }
         Update: {
-          free_shipping_threshold?: number
           id?: boolean
           restock_label?: string
           restock_mode?: boolean
-          shipping_fee_italy?: number
           updated_at?: string
         }
         Relationships: []

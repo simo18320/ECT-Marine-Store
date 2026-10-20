@@ -1,11 +1,10 @@
 "use client";
 
 import { useActionState } from "react";
-import type { Database } from "@/types/database";
 import type { ProductFormState } from "@/lib/admin/product-actions";
 import { ProductShippingSection, type ShippingContext } from "./product-shipping-section";
 
-type Product = Database["public"]["Tables"]["products"]["Row"];
+type Product = import("@/lib/admin/products").ProductForEdit;
 
 const SIZE_OPTIONS = [
   '10"',

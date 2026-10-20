@@ -50,7 +50,7 @@ export async function listRfqs() {
 export async function getRfqDetail(id: string) {
   const supabase = await createClient();
   const [{ data: rfq }, { data: rfqSuppliers }, { data: quotes }] = await Promise.all([
-    supabase.from("rfqs").select("*, product:products(id, sku, name, purchase_cost)").eq("id", id).single(),
+    supabase.from("rfqs").select("*, product:products(id, sku, name)").eq("id", id).single(),
     supabase.from("rfq_suppliers").select("*, supplier:suppliers(*)").eq("rfq_id", id),
     supabase.from("supplier_quotes").select("*, supplier:suppliers(*)").eq("rfq_id", id).order("created_at"),
   ]);
