@@ -8,6 +8,20 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "15mb",
     },
   },
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          // Nothing on this site is meant to be embedded in another page.
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
+        ],
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       {
