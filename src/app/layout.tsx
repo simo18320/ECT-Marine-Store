@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Carlito, Fraunces, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { siteUrl } from "@/lib/site-url";
+import { jsonLd, organizationJsonLd } from "@/lib/seo";
 
 const bodyFont = Carlito({
   variable: "--font-calibri",
@@ -23,10 +25,14 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const DESCRIPTION =
+  "Water, air, hygiene and maintenance products for yachts, engineered by Eco Cleaning Technologies.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl()),
   title: "ECT Marine Store",
-  description:
-    "Water, air, hygiene and maintenance products for yachts, engineered by Eco Cleaning Technologies.",
+  description: DESCRIPTION,
+  openGraph: { siteName: "ECT Marine Store", type: "website", title: "ECT Marine Store", description: DESCRIPTION },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -35,7 +41,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${bodyFont.variable} ${headingFont.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(organizationJsonLd()) }} />
+        {children}
+      </body>
     </html>
   );
 }

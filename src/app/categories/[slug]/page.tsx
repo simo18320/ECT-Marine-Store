@@ -24,8 +24,9 @@ export async function generateMetadata({
   if (!result) return {};
   const { category } = result;
   return {
-    title: category.seo_title ?? category.name,
+    title: `${category.seo_title ?? category.name} | ECT Marine Store`,
     description: category.meta_description ?? category.description ?? undefined,
+    alternates: { canonical: `/categories/${category.slug}` },
   };
 }
 

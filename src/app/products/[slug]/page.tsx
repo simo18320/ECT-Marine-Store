@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { cache } from "react";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { SiteHeader } from "@/components/nav/site-header";
 import { SiteFooter } from "@/components/nav/site-footer";
 import { ProductCard } from "@/components/product/product-card";
@@ -12,10 +14,29 @@ import { getAvailabilityLabel } from "@/lib/inventory/rules";
 import { getStoreSettings } from "@/lib/settings/queries";
 import { productShippingNote } from "@/lib/shipping/actions";
 import { formatCurrency, withVat } from "@/lib/utils";
+import { jsonLd, productJsonLd, truncate } from "@/lib/seo";
+
+// One database read serves both the metadata and the page.
+const loadProduct = cache(getProductBySlug);
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const product = await loadProduct(slug);
+  if (!product) return {};
+  const description = truncate(product.short_description ?? product.description);
+  const image = product.images[0]?.url;
+  const title = `${product.name} | ECT Marine Store`;
+  return {
+    title,
+    description,
+    alternates: { canonical: `/products/${product.slug}` },
+    openGraph: { title, description, type: "website", images: image ? [{ url: image }] : undefined },
+  };
+}
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const product = await getProductBySlug(slug);
+  const product = await loadProduct(slug);
   if (!product) notFound();
 
   const stockStatus = product.availability_status;
@@ -35,6 +56,22 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   return (
     <>
       <SiteHeader />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: jsonLd(
+            productJsonLd({
+              name: product.name,
+              sku: product.sku,
+              slug: product.slug,
+              description: truncate(product.short_description ?? product.description, 300),
+              image: product.images[0]?.url,
+              priceInclVat: withVat(product.selling_price, product.vat_rate),
+              availability: stockStatus,
+            }),
+          ),
+        }}
+      />
       <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-10">
         <nav className="mb-6 flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
           <Link href="/" className="hover:text-foreground">
