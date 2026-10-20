@@ -5,7 +5,7 @@ import { siteUrl } from "@/lib/site-url";
 // Regenerated at most hourly; reads only public catalogue data with the anonymous key.
 export const revalidate = 3600;
 
-const STATIC_PATHS = ["/shop", "/find-product", "/terms", "/privacy", "/withdrawal", "/company-info"];
+const STATIC_PATHS = ["/find-product", "/terms", "/privacy", "/withdrawal", "/company-info"];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = siteUrl();
