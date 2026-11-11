@@ -45,6 +45,7 @@ export async function recordMovement(_prev: MovementFormState, formData: FormDat
   if (error) return { error: "Could not record the movement. Please try again." };
 
   revalidatePath("/admin/inventory");
+  revalidatePath(`/i/${product.sku}`);
   const after = before + movement.delta;
   const sign = movement.delta > 0 ? "+" : "−";
   return { success: `${product.sku}: ${sign}${quantity} (${MOVEMENT_KINDS[kind].label.replace(/ \([+−]\)$/, "")}). Stock was ${before}, now ${after}.` };

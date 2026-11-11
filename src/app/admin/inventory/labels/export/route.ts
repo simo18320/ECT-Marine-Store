@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { requireStaff } from "@/lib/admin/guard";
 import { createClient } from "@/lib/supabase/server";
 
@@ -16,8 +16,10 @@ function specValue(specs: unknown, key: string): string {
 // text/barcode/QR object on the label template, and prints one label per row — so this needs
 // one row per physical unit (matching the quantity logic on the print pages), not one per
 // product, and the QR column must hold the literal string a QR object should encode.
-export async function GET() {
+export async function GET(request: NextRequest) {
   await requireStaff();
+  // Same choice as the print page: one row per product (default) or one per piece in stock.
+  const perUnit = request.nextUrl.searchParams.get("copies") === "units";
   const supabase = await createClient();
 
   const { data: products } = await supabase
@@ -31,7 +33,7 @@ export async function GET() {
   const rows: string[] = [header.map(csvField).join(",")];
 
   for (const product of products ?? []) {
-    const quantity = product.inventory?.current_stock ?? 0;
+    const quantity = perUnit ? (product.inventory?.current_stock ?? 0) : 1;
     if (quantity <= 0) continue;
 
     const row = [
@@ -40,7 +42,7 @@ export async function GET() {
       specValue(product.technical_specs, "size"),
       specValue(product.technical_specs, "micron_rating"),
       product.selling_price.toFixed(2),
-      `${appUrl}/admin/products/${product.id}/edit`,
+      `${appUrl}/i/${product.sku}`,
     ]
       .map(csvField)
       .join(",");

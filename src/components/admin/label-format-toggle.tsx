@@ -13,10 +13,13 @@ const STORAGE_KEY = "ect-label-format";
 export function LabelFormatToggle({
   isBrother,
   hasExplicitFormat,
+  copies = "type",
 }: {
   isBrother: boolean;
   hasExplicitFormat: boolean;
+  copies?: "type" | "units";
 }) {
+  const copiesParam = copies === "units" ? "copies=units" : "";
   const router = useRouter();
 
   useEffect(() => {
@@ -27,8 +30,8 @@ export function LabelFormatToggle({
     } catch {
       return;
     }
-    if (saved === "brother") router.replace("/admin/inventory/labels?format=brother");
-  }, [hasExplicitFormat, router]);
+    if (saved === "brother") router.replace(`/admin/inventory/labels?format=brother${copiesParam ? `&${copiesParam}` : ""}`);
+  }, [hasExplicitFormat, router, copiesParam]);
 
   function remember(format: "a4" | "brother") {
     try {
@@ -42,7 +45,7 @@ export function LabelFormatToggle({
   return (
     <div className="flex gap-2 text-sm">
       <Link
-        href="/admin/inventory/labels"
+        href={`/admin/inventory/labels${copiesParam ? `?${copiesParam}` : ""}`}
         onClick={() => remember("a4")}
         className={!isBrother ? "font-semibold text-black" : "text-gray-500 hover:text-black"}
       >
@@ -50,7 +53,7 @@ export function LabelFormatToggle({
       </Link>
       <span className="text-gray-300">|</span>
       <Link
-        href="/admin/inventory/labels?format=brother"
+        href={`/admin/inventory/labels?format=brother${copiesParam ? `&${copiesParam}` : ""}`}
         onClick={() => remember("brother")}
         className={isBrother ? "font-semibold text-black" : "text-gray-500 hover:text-black"}
       >

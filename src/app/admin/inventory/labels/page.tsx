@@ -27,31 +27,29 @@ function specSummary(specs: unknown): string {
 export default async function InventoryLabelsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ format?: string }>;
+  searchParams: Promise<{ format?: string; copies?: string }>;
 }) {
   await requireStaff();
-  const { format } = await searchParams;
+  const { format, copies } = await searchParams;
+  // Default: one label per product (stick it on the item, the bin or the shelf). "units" = one per piece in stock.
+  const perUnit = copies === "units";
   const hasExplicitFormat = format !== undefined;
   const isBrother = format === "brother";
   const products = await listProductsForLabels();
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
-  // One label per physical unit in stock, not one per product — a product with 5 in inventory
-  // prints 5 identical copies of its label, ready to cut (A4) or already cut by the printer
-  // (Brother) and stuck on each unit.
+  // The QR holds a short URL (/i/<sku>): fewer modules, so it stays readable by a phone camera on a small label.
+  const qrFor = (sku: string) => generateQrDataUrl(`${appUrl}/i/${sku}`);
   const labels = await Promise.all(
     products.flatMap((product) => {
-      const quantity = product.inventory?.current_stock ?? 0;
+      const quantity = perUnit ? (product.inventory?.current_stock ?? 0) : 1;
       if (quantity <= 0) return [];
-      return Array.from({ length: quantity }, async () => ({
-        product,
-        qrDataUrl: await generateQrDataUrl(`${appUrl}/admin/products/${product.id}/edit`),
-      }));
+      return Array.from({ length: quantity }, async () => ({ product, qrDataUrl: await qrFor(product.sku) }));
     }),
   );
 
-  const productsWithNoStock = products.filter((p) => (p.inventory?.current_stock ?? 0) <= 0);
+  const productsWithNoStock = perUnit ? products.filter((p) => (p.inventory?.current_stock ?? 0) <= 0) : [];
 
   return (
     <div className="bg-white p-8 text-black print:p-0">
@@ -62,15 +60,35 @@ export default async function InventoryLabelsPage({
           ← Torna all&rsquo;inventario
         </Link>
         <div className="flex items-center gap-4">
-          <LabelFormatToggle isBrother={isBrother} hasExplicitFormat={hasExplicitFormat} />
+          <LabelFormatToggle isBrother={isBrother} hasExplicitFormat={hasExplicitFormat} copies={perUnit ? "units" : "type"} />
           <a
-            href="/admin/inventory/labels/export"
+            href={`/admin/inventory/labels/export${perUnit ? "?copies=units" : ""}`}
             className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-100"
           >
             Esporta CSV per P-touch Editor
           </a>
           <PrintButton label="Stampa etichette" />
         </div>
+      </div>
+
+      <div className="mb-4 flex flex-wrap items-center gap-3 text-sm print:hidden">
+        <span className="text-gray-500">Etichette:</span>
+        <Link
+          href={`/admin/inventory/labels${isBrother ? "?format=brother" : ""}`}
+          className={!perUnit ? "font-semibold text-black" : "text-gray-500 hover:text-black"}
+        >
+          Una per prodotto ({products.length})
+        </Link>
+        <span className="text-gray-300">|</span>
+        <Link
+          href={`/admin/inventory/labels?${isBrother ? "format=brother&" : ""}copies=units`}
+          className={perUnit ? "font-semibold text-black" : "text-gray-500 hover:text-black"}
+        >
+          Una per ogni pezzo in scorta
+        </Link>
+        <span className="text-xs text-gray-500">
+          — il QR apre sul telefono la scheda dell&rsquo;articolo con giacenza e pulsanti per scaricare o caricare.
+        </span>
       </div>
 
       {isBrother && (
@@ -92,8 +110,8 @@ export default async function InventoryLabelsPage({
 
       {labels.length === 0 ? (
         <p className="text-sm text-gray-600 print:hidden">
-          Nessun prodotto ha scorte registrate in Inventory, quindi non c&rsquo;è nulla da
-          etichettare — registra prima le quantità reali in Admin → Inventory, poi torna qui.
+          Nessuna etichetta da stampare: con &ldquo;una per ogni pezzo&rdquo; servono scorte registrate in Admin →
+          Inventory. Scegli &ldquo;Una per prodotto&rdquo; per stampare un QR per ogni prodotto attivo.
         </p>
       ) : isBrother ? (
         <div className="flex flex-col items-center gap-4 print:block print:gap-0">
