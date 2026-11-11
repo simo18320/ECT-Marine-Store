@@ -64,3 +64,49 @@ describe("backorderable availability", () => {
     expect(getAvailabilityLabel("in_stock", "available_3_working_days", false, "")).toBe("In stock");
   });
 });
+
+describe("manual stock movements", () => {
+  it("stores a sale and damage as positive quantities, which the trigger subtracts", async () => {
+    const { resolveMovement } = await import("@/lib/inventory/movements");
+    expect(resolveMovement("manual_sale", 3)).toMatchObject({ movementType: "sale", storedQuantity: 3, delta: -3 });
+    expect(resolveMovement("damage", 2)).toMatchObject({ movementType: "damage", storedQuantity: 2, delta: -2, noteRequired: true });
+  });
+
+  it("stores a stock correction signed, so a decrease is negative", async () => {
+    const { resolveMovement } = await import("@/lib/inventory/movements");
+    expect(resolveMovement("correction_decrease", 4)).toMatchObject({ movementType: "adjustment", storedQuantity: -4, delta: -4, noteRequired: true });
+    expect(resolveMovement("correction_increase", 4)).toMatchObject({ movementType: "adjustment", storedQuantity: 4, delta: 4 });
+  });
+
+  it("goods received and returns add stock", async () => {
+    const { resolveMovement } = await import("@/lib/inventory/movements");
+    expect(resolveMovement("purchase", 10).delta).toBe(10);
+    expect(resolveMovement("return", 1).delta).toBe(1);
+  });
+
+  it("displays the effect of a stored movement", async () => {
+    const { storedMovementDelta, isMovementKind } = await import("@/lib/inventory/movements");
+    expect(storedMovementDelta("sale", 2)).toBe(-2);
+    expect(storedMovementDelta("damage", 5)).toBe(-5);
+    expect(storedMovementDelta("adjustment", -3)).toBe(-3);
+    expect(storedMovementDelta("purchase", 7)).toBe(7);
+    expect(isMovementKind("manual_sale")).toBe(true);
+    expect(isMovementKind("sale")).toBe(false);
+  });
+});
+
+describe("refusing to remove more than is in stock", () => {
+  it("refuses a removal larger than the stock, unless the product can be backordered", async () => {
+    const { removalError } = await import("@/lib/inventory/movements");
+    expect(removalError(5, -6, false)).toBe("Only 5 in stock: you cannot remove 6.");
+    expect(removalError(0, -1, false)).toBe("Only 0 in stock: you cannot remove 1.");
+    expect(removalError(-3, -1, false)).toBe("Only 0 in stock: you cannot remove 1.");
+    expect(removalError(5, -6, true)).toBeNull();
+  });
+
+  it("allows removing exactly what is there, and never blocks an addition", async () => {
+    const { removalError } = await import("@/lib/inventory/movements");
+    expect(removalError(5, -5, false)).toBeNull();
+    expect(removalError(0, 10, false)).toBeNull();
+  });
+});

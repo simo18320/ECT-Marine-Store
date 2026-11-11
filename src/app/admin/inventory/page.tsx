@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { requireStaff } from "@/lib/admin/guard";
 import { listActiveProductsForSelect, listInventory, listRecentMovements } from "@/lib/admin/inventory";
-import { recordMovement, updateReorderPoint } from "@/lib/admin/inventory-actions";
+import { updateReorderPoint } from "@/lib/admin/inventory-actions";
+import { InventoryMovementForm } from "@/components/admin/inventory-movement-form";
+import { storedMovementDelta } from "@/lib/inventory/movements";
 import { getStockStatus, getAvailableStock, STOCK_STATUS_LABEL } from "@/lib/inventory/rules";
 
 export default async function AdminInventoryPage() {
@@ -23,52 +25,11 @@ export default async function AdminInventoryPage() {
 
       <section className="mb-10 rounded-md border border-border p-4">
         <h2 className="mb-3 text-sm font-semibold">Record a movement</h2>
-        <form action={recordMovement} className="flex flex-wrap items-end gap-3">
-          <label className="flex w-full flex-col gap-1 text-sm sm:w-auto">
-            Product
-            <select
-              name="product_id"
-              required
-              className="w-full min-w-0 rounded-md border border-input bg-card px-3 py-2 sm:min-w-48 sm:w-auto sm:max-w-64"
-            >
-              {products.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.sku} — {p.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            Type
-            <select name="movement_type" className="rounded-md border border-input bg-card px-3 py-2">
-              <option value="adjustment">Adjustment</option>
-              <option value="damage">Damage</option>
-              <option value="transfer">Transfer</option>
-              <option value="purchase">Purchase</option>
-              <option value="return">Return</option>
-            </select>
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            Quantity
-            <input
-              name="quantity"
-              type="number"
-              min={1}
-              required
-              className="w-24 rounded-md border border-input bg-card px-3 py-2"
-            />
-          </label>
-          <label className="flex flex-1 flex-col gap-1 text-sm">
-            Note
-            <input name="note" className="rounded-md border border-input bg-card px-3 py-2" />
-          </label>
-          <button type="submit" className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
-            Record
-          </button>
-        </form>
+        <InventoryMovementForm products={products} />
         <p className="mt-2 text-xs text-muted-foreground">
-          Damage decreases stock; adjustment is signed as entered (business-rules.md §2). Sale
-          movements are written automatically by the Stripe webhook, not entered here.
+          Use &ldquo;Manual sale&rdquo; for goods sold or shipped outside the shop (in person, by phone, direct orders). Online
+          orders reduce stock automatically when they are paid, so do not record those here. You cannot remove more than
+          is in stock, except for products sold as &ldquo;available in 3 working days&rdquo;.
         </p>
       </section>
 
@@ -157,7 +118,12 @@ export default async function AdminInventoryPage() {
                 </td>
                 <td className="px-4 py-2">{m.product?.name ?? "—"}</td>
                 <td className="px-4 py-2 capitalize">{m.movement_type}</td>
-                <td className="px-4 py-2 text-right">{m.quantity}</td>
+                <td className="px-4 py-2 text-right">
+                  {(() => {
+                    const d = storedMovementDelta(m.movement_type, m.quantity);
+                    return <span className={d < 0 ? "text-status-critical" : "text-status-good"}>{d > 0 ? `+${d}` : `−${Math.abs(d)}`}</span>;
+                  })()}
+                </td>
                 <td className="px-4 py-2 text-muted-foreground">{m.note ?? "—"}</td>
               </tr>
             ))}
